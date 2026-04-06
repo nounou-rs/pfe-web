@@ -51,30 +51,6 @@ export default function Header({ toggleSidebar }) {
         {/* Right Section */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           {/* Notifications */}
-          <button style={{
-            position: 'relative',
-            padding: '8px',
-            backgroundColor: 'transparent',
-            border: 'none',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            color: '#64748B',
-            transition: 'all 0.2s'
-          }}
-          onMouseEnter={(e) => e.target.style.backgroundColor = '#F1F5F9'}
-          onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-          >
-            <Bell size={20} />
-            <span style={{
-              position: 'absolute',
-              top: '4px',
-              right: '4px',
-              width: '8px',
-              height: '8px',
-              backgroundColor: '#EF4444',
-              borderRadius: '50%'
-            }}></span>
-          </button>
 
           {/* User Menu */}
           <div style={{ position: 'relative' }}>

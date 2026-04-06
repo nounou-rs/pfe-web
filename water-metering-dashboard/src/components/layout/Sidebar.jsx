@@ -6,7 +6,6 @@ const menuItems = [
   { text: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
   { text: 'Carte', icon: Map, path: '/map' },
   { text: 'Compteurs', icon: Droplet, path: '/meters' },
-  { text: 'Analytics', icon: BarChart3, path: '/analytics' },
   { text: 'Alertes', icon: AlertCircle, path: '/alerts', badge: 12 },
   { text: 'Interventions', icon: Wrench, path: '/interventions' },
   { text: 'Prédictions IA', icon: Brain, path: '/predictions' },

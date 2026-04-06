@@ -13,7 +13,6 @@ import MetersPage from './pages/MetersPage';
 import MeterDetailsPage from './pages/MeterDetailsPage';
 import AlertsPage from './pages/AlertsPage';
 import InterventionsPage from './pages/InterventionsPage';
-import AnalyticsPage from './pages/AnalyticsPage';
 import PredictionsPage from './pages/PredictionsPage';
 import ReportsPage from './pages/ReportsPage';
 import UsersPage from './pages/UsersPage';
@@ -76,7 +75,6 @@ function AppRoutes() {
               <Route path="/meters/:id" element={<MeterDetailsPage />} />
               <Route path="/alerts" element={<AlertsPage />} />
               <Route path="/interventions" element={<InterventionsPage />} />
-              <Route path="/analytics" element={<AnalyticsPage />} />
               <Route path="/predictions" element={<PredictionsPage />} />
               <Route path="/reports" element={<ReportsPage />} />
               <Route path="/users" element={<UsersPage />} />
