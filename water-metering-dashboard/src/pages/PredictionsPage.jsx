@@ -186,4 +186,4 @@ const PredictionsPage = () => {
   );
 };
 
-export default PredictionsPage;
+export default PredictionsPage; 
