@@ -1,13 +1,13 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Map, Droplet, BarChart3, AlertCircle, Wrench, Brain, FileText, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, Map, Droplet, AlertCircle, Camera, Brain, FileText, ChevronRight } from 'lucide-react';
 
 const menuItems = [
   { text: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
   { text: 'Carte', icon: Map, path: '/map' },
   { text: 'Compteurs', icon: Droplet, path: '/meters' },
   { text: 'Alertes', icon: AlertCircle, path: '/alerts', badge: 12 },
-  { text: 'Interventions', icon: Wrench, path: '/interventions' },
+  { text: 'Live Capture', icon: Camera, path: '/Live Capture' },
   { text: 'Prédictions IA', icon: Brain, path: '/predictions' },
   { text: 'Rapports', icon: FileText, path: '/reports' },
 ];
@@ -112,7 +112,7 @@ export default function Sidebar({ isOpen = true }) {
         fontSize: '12px',
         color: '#64748B'
       }}>
-        <p>WiCMiW v1.0.0</p>
+        <p>WICMIC v1.0.0</p>
       </div>
     </aside>
   );

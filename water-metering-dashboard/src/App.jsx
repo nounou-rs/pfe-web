@@ -12,7 +12,7 @@ import MapPage from './pages/MapPage';
 import MetersPage from './pages/MetersPage';
 import MeterDetailsPage from './pages/MeterDetailsPage';
 import AlertsPage from './pages/AlertsPage';
-import InterventionsPage from './pages/InterventionsPage';
+import LiveCapturePage from './pages/LiveCapturePage';
 import PredictionsPage from './pages/PredictionsPage';
 import ReportsPage from './pages/ReportsPage';
 import UsersPage from './pages/UsersPage';
@@ -74,7 +74,7 @@ function AppRoutes() {
               <Route path="/meters" element={<MetersPage />} />
               <Route path="/meters/:id" element={<MeterDetailsPage />} />
               <Route path="/alerts" element={<AlertsPage />} />
-              <Route path="/interventions" element={<InterventionsPage />} />
+              <Route path="/Live Capture" element={<LiveCapturePage />} />
               <Route path="/predictions" element={<PredictionsPage />} />
               <Route path="/reports" element={<ReportsPage />} />
               <Route path="/users" element={<UsersPage />} />
