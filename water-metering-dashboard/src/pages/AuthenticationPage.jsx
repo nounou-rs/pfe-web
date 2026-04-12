@@ -114,7 +114,7 @@ export default function AuthenticationPage() {
               <Mail size={18} className="form-icon" />
               <input
                 id="email"
-                type="email"
+                type="text"
                 name="email"
                 placeholder="vous@entreprise.com"
                 value={formData.email}

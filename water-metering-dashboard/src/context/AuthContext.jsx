@@ -8,23 +8,20 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Vérification du token au démarrage de l'application
+  // Vérification du token au démarrage de l'application (Refresh/F5)
   useEffect(() => {
     const checkAuth = async () => {
-      const token = localStorage.getItem('token');
-      if (token) {
-        try {
-          // Si tu as ton backend prêt, décommente la ligne suivante :
-          // const response = await axios.get(`${process.env.REACT_APP_API_URL}/me`, { headers: { Authorization: `Bearer ${token}` } });
-          // setUser(response.data);
-          
-          // En attendant le backend, on restaure la session si un token existe
-          setUser({ id: 1, email: 'user@wicmic.com', name: 'Utilisateur Connecté' }); 
-        } catch (error) {
-          console.error("Session expirée", error);
-          localStorage.removeItem('token');
-          setUser(null);
-        }
+      const token = localStorage.getItem('wicmicToken');
+      const storedUser = localStorage.getItem('wicmicUser');
+
+      if (token && storedUser) {
+        // En attendant d'avoir une route '/me', on restaure les infos sauvegardées localement
+        setUser(JSON.parse(storedUser));
+      } else {
+        // Nettoyage par sécurité s'il manque des données
+        localStorage.removeItem('wicmicToken');
+        localStorage.removeItem('wicmicUser');
+        setUser(null);
       }
       setLoading(false);
     };
@@ -34,36 +31,38 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      // Simulation d'appel API (À remplacer par ton vrai appel axios.post)
-      // const response = await axios.post(`${process.env.REACT_APP_API_URL}/login`, { email, password });
+      // VRAI APPEL API vers ton backend FastAPI
+      // Note : on mappe ton champ "email" de l'interface vers le champ "nom" attendu par FastAPI
+      const response = await axios.post('http://127.0.0.1:8000/login', { 
+        nom: email, 
+        mot_de_passe: password 
+      });
       
-      // Simulation de succès pour le développement
-      console.log(`Tentative de connexion pour : ${email}`);
+      // Si FastAPI répond avec un succès (Code 200) :
+      const realToken = response.data.token;
+      const realUser = response.data.utilisateur;
       
-      if (email) {
-         const fakeUser = { 
-           id: 1, 
-           email: email, 
-           name: 'Admin WICMIC', 
-           role: 'admin' 
-         };
-         
-         const fakeToken = "jwt_token_simulé_123456";
-         
-         localStorage.setItem('token', fakeToken);
-         setUser(fakeUser);
-         return { success: true };
-      }
+      // On sauvegarde la vraie session
+      localStorage.setItem('wicmicToken', realToken);
+      localStorage.setItem('wicmicUser', JSON.stringify(realUser));
+      setUser(realUser);
       
-      return { success: false, error: "Email invalide" };
+      return { success: true };
 
-    } catch (e) {
-      return { success: false, error: e.response?.data?.message || 'Erreur de connexion' };
+    } catch (error) {
+      // Si FastAPI renvoie une erreur (ex: Code 401 pour mauvais mot de passe)
+      console.error("Erreur API Login :", error);
+      if (error.response && error.response.status === 401) {
+        return { success: false, error: "Nom d'utilisateur ou mot de passe incorrect" };
+      }
+      return { success: false, error: 'Erreur de communication avec le serveur (Vérifiez FastAPI)' };
     }
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
+    // Déconnexion réelle
+    localStorage.removeItem('wicmicToken');
+    localStorage.removeItem('wicmicUser');
     setUser(null);
   };
 
@@ -72,4 +71,4 @@ export const AuthProvider = ({ children }) => {
       {!loading && children}
     </AuthContext.Provider>
   );
-}; 
+};
