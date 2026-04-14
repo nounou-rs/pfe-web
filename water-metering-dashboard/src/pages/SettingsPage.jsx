@@ -5,15 +5,15 @@ import {
   Box, Typography, Paper, Grid, Divider, 
   List, ListItem, ListItemText, Switch,
   Avatar, Button, Chip, Stack, Modal, TextField, Alert,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Select, MenuItem
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Select, MenuItem,
+  Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions
 } from '@mui/material';
 import { 
-  Globe, Lock, Bell, LogOut, ShieldCheck, X, Users
+  Globe, Lock, Bell, LogOut, ShieldCheck, X, Users, Trash2, AlertTriangle
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 
-// Composant utilitaire pour les icônes
 const StyledIcon = ({ icon: Icon, color, bgcolor }) => (
   <Box sx={{ 
     display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -37,6 +37,9 @@ export default function SettingsPage() {
   const [isAccessModalOpen, setIsAccessModalOpen] = useState(false);
   const [utilisateursListe, setUtilisateursListe] = useState([]);
   const [accessMessage, setAccessMessage] = useState({ text: '', severity: 'info' });
+
+  // ====== ÉTAT DIALOGUE DE SUPPRESSION ======
+  const [deleteDialog, setDeleteDialog] = useState({ open: false, userId: null, userName: '' });
 
   // --- FONCTIONS MOT DE PASSE ---
   const handlePasswordChange = (e) => setPasswordData({ ...passwordData, [e.target.name]: e.target.value });
@@ -90,6 +93,30 @@ export default function SettingsPage() {
     }
   };
 
+  // --- FONCTIONS DE SUPPRESSION (Personnalisées avec Dialog) ---
+  const requestDeleteUser = (userId, userName) => {
+    // Au lieu du window.confirm, on ouvre notre belle modale MUI
+    setDeleteDialog({ open: true, userId, userName });
+  };
+
+  const cancelDeleteUser = () => {
+    setDeleteDialog({ open: false, userId: null, userName: '' });
+  };
+
+  const confirmDeleteUser = async () => {
+    const { userId } = deleteDialog;
+    try {
+      await axios.delete(`http://127.0.0.1:8000/utilisateurs/${userId}`);
+      setAccessMessage({ text: "Utilisateur supprimé avec succès.", severity: "success" });
+      fetchUtilisateurs(); // On met à jour le tableau
+      setDeleteDialog({ open: false, userId: null, userName: '' }); // On ferme la modale
+      setTimeout(() => setAccessMessage({ text: '', severity: 'info' }), 3000);
+    } catch (error) {
+      setAccessMessage({ text: error.response?.data?.detail || "Erreur lors de la suppression.", severity: "error" });
+      setDeleteDialog({ open: false, userId: null, userName: '' }); // On ferme la modale même en cas d'erreur
+    }
+  };
+
   return (
     <Box sx={{ p: { xs: 2, md: 4 }, maxWidth: '1200px', margin: '0 auto' }}>
       
@@ -122,8 +149,6 @@ export default function SettingsPage() {
         {/* --- COLONNE DROITE (PARAMÈTRES) --- */}
         <Grid item xs={12} md={8}>
           <Stack spacing={3}>
-            
-            {/* PRÉFÉRENCES GÉNÉRALES */}
             <Paper elevation={0} sx={{ borderRadius: '16px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
               <Box sx={{ px: 3, py: 2, bgcolor: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
                 <Typography variant="subtitle2" sx={{ fontWeight: 600, color: '#475569', textTransform: 'uppercase' }}>Préférences Générales</Typography>
@@ -143,7 +168,6 @@ export default function SettingsPage() {
               </List>
             </Paper>
 
-            {/* SÉCURITÉ ET ACCÈS */}
             <Paper elevation={0} sx={{ borderRadius: '16px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
               <Box sx={{ px: 3, py: 2, bgcolor: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
                 <Typography variant="subtitle2" sx={{ fontWeight: 600, color: '#475569', textTransform: 'uppercase' }}>Sécurité et Accès</Typography>
@@ -171,14 +195,12 @@ export default function SettingsPage() {
                 )}
               </List>
             </Paper>
-
           </Stack>
         </Grid>
       </Grid>
 
       {/* ================= MODALE 1 : MOT DE PASSE ================= */}
       <Modal open={isPasswordModalOpen} onClose={() => setIsPasswordModalOpen(false)}>
-        {/* Le Box ci-dessous est OBLIGATOIRE pour Material-UI */}
         <Box sx={{
           position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
           width: 400, bgcolor: 'background.paper', borderRadius: '16px', boxShadow: 24, p: 4, outline: 'none'
@@ -187,9 +209,7 @@ export default function SettingsPage() {
             <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1, fontWeight: 'bold', color: '#1e293b' }}>
               <Lock size={20} color="#0284c7" /> Modifier le mot de passe
             </Typography>
-            <Box onClick={() => setIsPasswordModalOpen(false)} sx={{ cursor: 'pointer', color: '#64748b' }}>
-              <X size={20} />
-            </Box>
+            <Box onClick={() => setIsPasswordModalOpen(false)} sx={{ cursor: 'pointer', color: '#64748b' }}><X size={20} /></Box>
           </Box>
 
           {message.text && (
@@ -213,10 +233,9 @@ export default function SettingsPage() {
 
       {/* ================= MODALE 2 : GESTION DES ACCÈS ================= */}
       <Modal open={isAccessModalOpen} onClose={() => setIsAccessModalOpen(false)}>
-        {/* Le Box ci-dessous est OBLIGATOIRE pour Material-UI */}
         <Box sx={{
           position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-          width: 700, maxHeight: '80vh', overflowY: 'auto',
+          width: 800, maxHeight: '80vh', overflowY: 'auto',
           bgcolor: 'background.paper', borderRadius: '16px', boxShadow: 24, p: 4, outline: 'none'
         }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
@@ -236,7 +255,9 @@ export default function SettingsPage() {
                 <TableRow>
                   <TableCell sx={{ fontWeight: 'bold', color: '#475569' }}>Email</TableCell>
                   <TableCell sx={{ fontWeight: 'bold', color: '#475569' }}>Statut</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold', color: '#475569' }}>Date d'inscription</TableCell>
                   <TableCell sx={{ fontWeight: 'bold', color: '#475569' }}>Rôle</TableCell>
+                  <TableCell align="right" sx={{ fontWeight: 'bold', color: '#475569' }}>Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -245,6 +266,9 @@ export default function SettingsPage() {
                     <TableCell sx={{ fontWeight: 500 }}>{u.nom}</TableCell>
                     <TableCell>
                       <Chip label={u.email_verifie ? "Vérifié" : "En attente"} size="small" color={u.email_verifie ? "success" : "warning"} variant="outlined" />
+                    </TableCell>
+                    <TableCell sx={{ color: '#64748b', fontSize: '0.9rem' }}>
+                      {u.created_at ? new Date(u.created_at).toLocaleDateString('fr-FR') : 'N/A'}
                     </TableCell>
                     <TableCell>
                       <Select
@@ -258,6 +282,17 @@ export default function SettingsPage() {
                         <MenuItem value="Admin">Admin</MenuItem>
                       </Select>
                     </TableCell>
+                    <TableCell align="right">
+                      {/* Ici, on appelle notre nouvelle fonction requestDeleteUser */}
+                      <Button 
+                        color="error" 
+                        onClick={() => requestDeleteUser(u.id, u.nom)}
+                        disabled={u.id === user.id} 
+                        sx={{ minWidth: 'auto', p: 1, borderRadius: '8px' }}
+                      >
+                        <Trash2 size={18} />
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -265,6 +300,42 @@ export default function SettingsPage() {
           </TableContainer>
         </Box>
       </Modal>
+
+      {/* ================= MODALE 3 : DIALOGUE DE CONFIRMATION DE SUPPRESSION ================= */}
+      <Dialog 
+        open={deleteDialog.open} 
+        onClose={cancelDeleteUser}
+        PaperProps={{ sx: { borderRadius: '12px', padding: 1 } }}
+      >
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1.5, color: '#ef4444', fontWeight: 'bold' }}>
+          <AlertTriangle size={24} /> Confirmation de suppression
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ color: '#334155', mt: 1 }}>
+            Êtes-vous sûr de vouloir supprimer définitivement le compte de <strong style={{ color: '#0f172a' }}>{deleteDialog.userName}</strong> ?
+            <br /><br />
+            Cette action est irréversible et supprimera l'accès de cet utilisateur au système.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button 
+            onClick={cancelDeleteUser} 
+            color="inherit" 
+            sx={{ textTransform: 'none', fontWeight: 600, color: '#64748b' }}
+          >
+            Annuler
+          </Button>
+          <Button 
+            onClick={confirmDeleteUser} 
+            color="error" 
+            variant="contained" 
+            autoFocus
+            sx={{ textTransform: 'none', fontWeight: 600, boxShadow: 'none', borderRadius: '6px' }}
+          >
+            Supprimer définitivement
+          </Button>
+        </DialogActions>
+      </Dialog>
 
     </Box>
   );

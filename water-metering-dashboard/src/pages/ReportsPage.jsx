@@ -1,145 +1,216 @@
-import React, { useState } from 'react';
-import { FileText, Download, FileSpreadsheet, PieChart, Calendar, Filter, CheckCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { 
+  Box, Typography, Paper, Grid, Select, MenuItem, Button, 
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Alert
+} from '@mui/material';
+import { FileText, Download, FilePlus } from 'lucide-react';
 
-const ReportsPage = () => {
-  const [isGenerating, setIsGenerating] = useState(false);
+export default function ReportsPage() {
+  // --- ÉTATS DU FORMULAIRE ---
+  const [typeDonnees, setTypeDonnees] = useState('Consommation Globale');
+  const [periode, setPeriode] = useState('Derniers 30 jours');
+  const [format, setFormat] = useState('PDF'); // 'PDF' ou 'Excel'
 
-  // Simulation des rapports récents disponibles
-  const reports = [
-    { id: 1, name: "Bilan Consommation Mensuel - Mars 2026", date: "01/04/2026", type: "PDF", size: "1.2 MB" },
-    { id: 2, name: "Analyse des Fuites - Secteur Nord", date: "03/04/2026", type: "Excel", size: "450 KB" },
-    { id: 3, name: "Prédictions Trimestrielles Q2", date: "05/04/2026", type: "PDF", size: "2.8 MB" }
-  ];
+  // --- ÉTATS DES DONNÉES ---
+  const [archives, setArchives] = useState([]);
+  const [message, setMessage] = useState({ text: '', severity: 'info' });
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleGenerate = () => {
-    setIsGenerating(true);
-    setTimeout(() => setIsGenerating(false), 2000);
+  // --- CHARGEMENT DES ARCHIVES AU DÉMARRAGE ---
+  const fetchArchives = async () => {
+    try {
+      const response = await axios.get('http://127.0.0.1:8000/rapports');
+      setArchives(response.data);
+    } catch (error) {
+      console.error("Erreur lors de la récupération des rapports:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchArchives();
+  }, []);
+
+  // --- FONCTION DE GÉNÉRATION ---
+  const handleGenerateReport = async () => {
+    setIsLoading(true);
+    setMessage({ text: '', severity: 'info' });
+
+    try {
+      await axios.post('http://127.0.0.1:8000/rapports/generer', {
+        type_donnees: typeDonnees,
+        periode: periode,
+        format: format
+      });
+      
+      setMessage({ text: "Rapport généré et archivé avec succès !", severity: "success" });
+      fetchArchives(); // Rafraîchit le tableau de droite
+      
+      // Fait disparaître le message après 3 secondes
+      setTimeout(() => setMessage({ text: '', severity: 'info' }), 3000);
+    } catch (error) {
+      setMessage({ text: "Erreur lors de la génération du rapport.", severity: "error" });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <div style={{ padding: '2rem', backgroundColor: 'var(--color-bg)', minHeight: '100vh' }}>
+    <Box sx={{ p: { xs: 2, md: 4 }, maxWidth: '1200px', margin: '0 auto' }}>
       
-      {/* HEADER */}
-      <div style={{ marginBottom: '2rem' }}>
-        <h1 style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <FileText size={32} color="var(--color-primary)" /> Rapports & Exportations
-        </h1>
-        <p style={{ color: 'var(--color-text-light)' }}>Générez des analyses détaillées de votre parc de compteurs</p>
-      </div>
+      {/* --- EN-TÊTE --- */}
+      <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', gap: 2 }}>
+        <FileText size={32} color="#0284c7" />
+        <Box>
+          <Typography variant="h4" sx={{ fontWeight: 700, color: '#1e293b' }}>
+            Rapports & Exportations
+          </Typography>
+          <Typography variant="body1" sx={{ color: '#64748b', mt: 0.5 }}>
+            Générez des analyses détaillées de votre parc de compteurs
+          </Typography>
+        </Box>
+      </Box>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '30px' }}>
+      {message.text && (
+        <Alert severity={message.severity} sx={{ mb: 3, borderRadius: '8px' }}>
+          {message.text}
+        </Alert>
+      )}
+
+      <Grid container spacing={4}>
         
-        {/* CONFIGURATION DU RAPPORT */}
-        <div className="card card-standard">
-          <h3 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Filter size={20} /> Nouveau Rapport
-          </h3>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-            <div>
-              <label>Type de données</label>
-              <select className="input">
-                <option>Consommation Globale</option>
-                <option>Détection d'Anomalies (Fuites)</option>
-                <option>Performance des Batteries IoT</option>
-                <option>Prédictions IA (Prophet/LSTM)</option>
-              </select>
-            </div>
+        {/* --- COLONNE GAUCHE : FORMULAIRE NOUVEAU RAPPORT --- */}
+        <Grid item xs={12} md={5}>
+          <Paper elevation={0} sx={{ p: 4, borderRadius: '16px', border: '1px solid #e2e8f0' }}>
+            <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1, fontWeight: 600, color: '#0f172a', mb: 3 }}>
+              <FilePlus size={20} /> Nouveau Rapport
+            </Typography>
 
-            <div>
-              <label>Période</label>
-              <select className="input">
-                <option>Derniers 30 jours</option>
-                <option>Dernier trimestre</option>
-                <option>Année complète</option>
-                <option>Personnalisé...</option>
-              </select>
-            </div>
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="body2" sx={{ fontWeight: 500, color: '#475569', mb: 1 }}>Type de données</Typography>
+              <Select 
+                fullWidth size="small" 
+                value={typeDonnees} 
+                onChange={(e) => setTypeDonnees(e.target.value)}
+                sx={{ borderRadius: '8px' }}
+              >
+                <MenuItem value="Consommation Globale">Consommation Globale</MenuItem>
+                <MenuItem value="Analyse des Fuites">Analyse des Fuites</MenuItem>
+                <MenuItem value="Prédictions Trimestrielles">Prédictions Trimestrielles</MenuItem>
+                <MenuItem value="Alertes Critiques">Alertes Critiques</MenuItem>
+              </Select>
+            </Box>
 
-            <div>
-              <label>Format de sortie</label>
-              <div style={{ display: 'flex', gap: '10px', marginTop: '5px' }}>
-                <button className="btn btn-secondary btn-sm" style={{ flex: 1, gap: '5px' }}>
-                  <FileText size={16} /> PDF
-                </button>
-                <button className="btn btn-secondary btn-sm" style={{ flex: 1, gap: '5px' }}>
-                  <FileSpreadsheet size={16} /> Excel
-                </button>
-              </div>
-            </div>
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="body2" sx={{ fontWeight: 500, color: '#475569', mb: 1 }}>Période</Typography>
+              <Select 
+                fullWidth size="small" 
+                value={periode} 
+                onChange={(e) => setPeriode(e.target.value)}
+                sx={{ borderRadius: '8px' }}
+              >
+                <MenuItem value="Derniers 7 jours">Derniers 7 jours</MenuItem>
+                <MenuItem value="Derniers 30 jours">Derniers 30 jours</MenuItem>
+                <MenuItem value="Mois en cours">Mois en cours</MenuItem>
+                <MenuItem value="Année en cours">Année en cours</MenuItem>
+              </Select>
+            </Box>
 
-            <button 
-              className="btn btn-primary" 
-              style={{ marginTop: '10px' }} 
-              onClick={handleGenerate}
-              disabled={isGenerating}
+            <Box sx={{ mb: 4 }}>
+              <Typography variant="body2" sx={{ fontWeight: 500, color: '#475569', mb: 1 }}>Format de sortie</Typography>
+              <Grid container spacing={2}>
+                <Grid item xs={6}>
+                  <Button 
+                    fullWidth 
+                    variant={format === 'PDF' ? "contained" : "outlined"}
+                    onClick={() => setFormat('PDF')}
+                    sx={{ borderRadius: '8px', textTransform: 'none', boxShadow: 'none' }}
+                  >
+                    📄 PDF
+                  </Button>
+                </Grid>
+                <Grid item xs={6}>
+                  <Button 
+                    fullWidth 
+                    variant={format === 'Excel' ? "contained" : "outlined"}
+                    color="success"
+                    onClick={() => setFormat('Excel')}
+                    sx={{ borderRadius: '8px', textTransform: 'none', boxShadow: 'none' }}
+                  >
+                    📊 Excel
+                  </Button>
+                </Grid>
+              </Grid>
+            </Box>
+
+            <Button 
+              fullWidth 
+              variant="contained" 
+              size="large"
+              onClick={handleGenerateReport}
+              disabled={isLoading}
+              sx={{ borderRadius: '8px', textTransform: 'none', fontWeight: 600, py: 1.5, boxShadow: 'none' }}
             >
-              {isGenerating ? "Génération en cours..." : "Générer le rapport"}
-            </button>
-          </div>
-        </div>
+              {isLoading ? "Génération en cours..." : "Générer le rapport"}
+            </Button>
+          </Paper>
+        </Grid>
 
-        {/* LISTE DES RAPPORTS GÉNÉRÉS */}
-        <div className="card card-standard">
-          <h3 style={{ marginBottom: '20px' }}>Archives Récentes</h3>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--color-border)', textAlign: 'left' }}>
-                <th style={{ padding: '12px', color: 'var(--color-text-light)' }}>Nom du fichier</th>
-                <th style={{ padding: '12px', color: 'var(--color-text-light)' }}>Date</th>
-                <th style={{ padding: '12px', color: 'var(--color-text-light)' }}>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {reports.map((report) => (
-                <tr key={report.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
-                  <td style={{ padding: '12px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      {report.type === 'PDF' ? <FileText size={18} color="#EF4444" /> : <FileSpreadsheet size={18} color="#10B981" />}
-                      <span style={{ fontWeight: '500' }}>{report.name}</span>
-                    </div>
-                  </td>
-                  <td style={{ padding: '12px', fontSize: '0.9rem', color: 'var(--color-text-light)' }}>{report.date}</td>
-                  <td style={{ padding: '12px' }}>
-                    <button className="btn btn-secondary btn-sm" title="Télécharger">
-                      <Download size={16} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+        {/* --- COLONNE DROITE : ARCHIVES RÉCENTES --- */}
+        <Grid item xs={12} md={7}>
+          <Paper elevation={0} sx={{ p: 4, borderRadius: '16px', border: '1px solid #e2e8f0', height: '100%' }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, color: '#0f172a', mb: 3 }}>
+              Archives Récentes
+            </Typography>
 
-      {/* SECTION ANALYSE RAPIDE */}
-      <div style={{ marginTop: '30px' }} className="card card-standard">
-        <h3 style={{ marginBottom: '20px' }}><PieChart size={20} style={{ marginRight: '8px' }} /> Statistiques de Synthèse</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
-          <div style={{ padding: '15px', borderRadius: '8px', border: '1px solid var(--color-border)' }}>
-            <p className="text-label">Total Relevés</p>
-            <p style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>1,245</p>
-            <small style={{ color: 'var(--color-success)' }}>+12% ce mois</small>
-          </div>
-          <div style={{ padding: '15px', borderRadius: '8px', border: '1px solid var(--color-border)' }}>
-            <p className="text-label">Précision OCR</p>
-            <p style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>94.2%</p>
-            <small style={{ color: 'var(--color-primary)' }}>Modèle Deep Learning</small>
-          </div>
-          <div style={{ padding: '15px', borderRadius: '8px', border: '1px solid var(--color-border)' }}>
-            <p className="text-label">Économie Estimée</p>
-            <p style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>15%</p>
-            <small style={{ color: 'var(--color-accent-green)' }}>Grâce à l'IA</small>
-          </div>
-          <div style={{ padding: '15px', borderRadius: '8px', border: '1px solid var(--color-border)' }}>
-            <p className="text-label">Alertes Résolues</p>
-            <p style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>88%</p>
-            <small style={{ color: 'var(--color-text-light)' }}>Workflow actif</small>
-          </div>
-        </div>
-      </div>
-    </div>
+            <TableContainer>
+              <Table>
+                <TableHead sx={{ borderBottom: '2px solid #e2e8f0' }}>
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: 'bold', color: '#475569', borderBottom: 'none' }}>Nom du fichier</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', color: '#475569', borderBottom: 'none' }}>Date</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 'bold', color: '#475569', borderBottom: 'none' }}>Action</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {archives.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={3} align="center" sx={{ py: 3, color: '#64748b' }}>
+                        Aucun rapport généré pour le moment.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    archives.map((archive) => (
+                      <TableRow key={archive.id}>
+                        <TableCell sx={{ fontWeight: 500, display: 'flex', alignItems: 'center', gap: 1.5, borderBottom: '1px solid #f1f5f9' }}>
+                          <FileText size={18} color={archive.format_sortie === 'Excel' ? '#16a34a' : '#ef4444'} />
+                          {archive.nom_fichier}
+                        </TableCell>
+                        <TableCell sx={{ color: '#64748b', borderBottom: '1px solid #f1f5f9' }}>
+                          {new Date(archive.date_generation).toLocaleDateString('fr-FR')}
+                        </TableCell>
+                        <TableCell align="right" sx={{ borderBottom: '1px solid #f1f5f9' }}>
+                          <Button 
+                            variant="outlined" 
+                            size="small" 
+                            sx={{ minWidth: 'auto', p: 1, borderRadius: '8px', color: '#64748b', borderColor: '#e2e8f0' }}
+                            // Ici tu pourras ajouter la vraie fonction de téléchargement plus tard
+                            onClick={() => alert(`Téléchargement de ${archive.nom_fichier}`)} 
+                          >
+                            <Download size={16} />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+
+          </Paper>
+        </Grid>
+
+      </Grid>
+    </Box>
   );
-};
-
-export default ReportsPage;
+}

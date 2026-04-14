@@ -1,21 +1,44 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Map, Droplet, AlertCircle, Camera, Brain, FileText, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, Map, Droplet, AlertCircle, Camera, Brain, FileText, ChevronRight, Settings } from 'lucide-react';
 
+// J'ai retiré le "badge: 12" statique d'ici
 const menuItems = [
   { text: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
   { text: 'Carte', icon: Map, path: '/map' },
   { text: 'Compteurs', icon: Droplet, path: '/meters' },
-  { text: 'Alertes', icon: AlertCircle, path: '/alerts', badge: 12 },
+  { text: 'Alertes', icon: AlertCircle, path: '/alerts' }, 
   { text: 'Live Capture', icon: Camera, path: '/Live Capture' },
   { text: 'Prédictions IA', icon: Brain, path: '/predictions' },
   { text: 'Rapports', icon: FileText, path: '/reports' },
-  { text: 'Paramètres', icon: FileText, path: '/settings' }
+  { text: 'Paramètres', icon: Settings, path: '/settings' }
 ];
 
 export default function Sidebar({ isOpen = true }) {
   const navigate = useNavigate();
   const location = useLocation();
+  
+  // --- État pour le compteur d'alertes ---
+  const [alertCount, setAlertCount] = useState(0);
+
+  // Appel à l'API au chargement du menu
+  useEffect(() => {
+    const fetchAlertCount = async () => {
+      try {
+        const response = await axios.get('http://127.0.0.1:8000/alertes/count');
+        setAlertCount(response.data.count);
+      } catch (error) {
+        console.error("Erreur lors de la récupération du nombre d'alertes:", error);
+      }
+    };
+
+    fetchAlertCount();
+
+    // Actualiser le compteur toutes les minutes (60000 ms)
+    const interval = setInterval(fetchAlertCount, 60000);
+    return () => clearInterval(interval); 
+  }, []);
 
   return (
     <aside style={{
@@ -57,6 +80,9 @@ export default function Sidebar({ isOpen = true }) {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
             
+            // On vérifie si c'est l'onglet "Alertes" pour lui attribuer le compteur dynamique
+            const displayBadge = item.text === 'Alertes' ? (alertCount > 0 ? alertCount : null) : item.badge;
+            
             return (
               <button
                 key={item.text}
@@ -87,7 +113,9 @@ export default function Sidebar({ isOpen = true }) {
                   <Icon size={18} color={isActive ? '#0078B8' : '#94A3B8'} />
                   <span>{item.text}</span>
                 </div>
-                {item.badge && (
+                
+                {/* Affichage du badge s'il existe et est supérieur à 0 */}
+                {displayBadge && (
                   <span style={{
                     padding: '4px 8px',
                     fontSize: '12px',
@@ -96,9 +124,10 @@ export default function Sidebar({ isOpen = true }) {
                     color: '#DC2626',
                     borderRadius: '9999px'
                   }}>
-                    {item.badge}
+                    {displayBadge}
                   </span>
                 )}
+                
                 {isActive && <ChevronRight size={16} color="#0078B8" />}
               </button>
             );
