@@ -10,6 +10,7 @@ const menuItems = [
   { text: 'Live Capture', icon: Camera, path: '/Live Capture' },
   { text: 'Prédictions IA', icon: Brain, path: '/predictions' },
   { text: 'Rapports', icon: FileText, path: '/reports' },
+  { text: 'Paramètres', icon: FileText, path: '/settings' }
 ];
 
 export default function Sidebar({ isOpen = true }) {

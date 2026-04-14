@@ -1,11 +1,7 @@
-import React, { useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
-import { Bell, Menu, LogOut } from 'lucide-react';
+import React from 'react';
+import { Bell, Menu } from 'lucide-react';
 
 export default function Header({ toggleSidebar }) {
-  const { user, logout } = useAuth();
-  const [showUserMenu, setShowUserMenu] = useState(false);
-
   return (
     <header style={{
       backgroundColor: '#FFFFFF',
@@ -23,7 +19,8 @@ export default function Header({ toggleSidebar }) {
         alignItems: 'center',
         justifyContent: 'space-between'
       }}>
-        {/* Left Section */}
+        
+        {/* ================= GAUCHE ================= */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <button
             onClick={toggleSidebar}
@@ -43,97 +40,9 @@ export default function Header({ toggleSidebar }) {
           </button>
           
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <img src="/logo.jpg" alt="WICMIC" style={{ height: '56px', width: 'auto' }} />
+            <img src="/logo.jpg" alt="WICMIC" style={{ height: '50px', width: 'auto' }} />
+            {/* Titre vide pour l'instant, tu peux ajouter le nom de l'app si besoin */}
             <h1 style={{ fontSize: '18px', fontWeight: 700, color: '#1E293B' }}></h1>
-          </div>
-        </div>
-
-        {/* Right Section */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          {/* Notifications */}
-
-          {/* User Menu */}
-          <div style={{ position: 'relative' }}>
-            <button
-              onClick={() => setShowUserMenu(!showUserMenu)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '8px 12px',
-                backgroundColor: 'transparent',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                transition: 'all 0.2s'
-              }}
-              onMouseEnter={(e) => e.target.style.backgroundColor = '#F1F5F9'}
-              onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-            >
-              <div style={{
-                width: '32px',
-                height: '32px',
-                backgroundColor: '#0078B8',
-                borderRadius: '6px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#FFFFFF',
-                fontSize: '14px',
-                fontWeight: 600
-              }}>
-                {user?.name?.charAt(0) || 'U'}
-              </div>
-              <span style={{ fontSize: '14px', fontWeight: 500, color: '#1E293B' }}>{user?.name}</span>
-            </button>
-
-            {/* Dropdown Menu */}
-            {showUserMenu && (
-              <div style={{
-                position: 'absolute',
-                right: 0,
-                marginTop: '8px',
-                width: '192px',
-                backgroundColor: '#FFFFFF',
-                borderRadius: '8px',
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
-                border: '1px solid #E2E8F0',
-                zIndex: 50
-              }}>
-                <div style={{
-                  padding: '12px 16px',
-                  borderBottom: '1px solid #E2E8F0'
-                }}>
-                  <p style={{ fontSize: '14px', fontWeight: 500, color: '#1E293B' }}>{user?.name}</p>
-                  <p style={{ fontSize: '12px', color: '#64748B' }}>{user?.email}</p>
-                </div>
-                <button
-                  onClick={() => {
-                    setShowUserMenu(false);
-                    logout();
-                  }}
-                  style={{
-                    width: '100%',
-                    padding: '10px 16px',
-                    textAlign: 'left',
-                    fontSize: '14px',
-                    color: '#EF4444',
-                    backgroundColor: 'transparent',
-                    border: 'none',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    transition: 'all 0.2s'
-                  }}
-                  onMouseEnter={(e) => e.target.style.backgroundColor = '#FEE2E2'}
-                  onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-                >
-                  <LogOut size={16} />
-                  Déconnexion
-                </button>
-              </div>
-            )}
           </div>
         </div>
       </div>

@@ -1,131 +1,243 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Search, Plus, Filter, Battery, Wifi, Activity, Cpu } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, X, Database, Hash } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 const MetersPage = () => {
-  // 1. States pour les données dynamiques
   const [meters, setMeters] = useState([]);
+  const [filteredMeters, setFilteredMeters] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [chargement, setChargement] = useState(true);
+  
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  
+  const [formData, setFormData] = useState({
+    id: '',
+    nom: '',
+    localisation_atelier: '',
+    type: 'Digital'
+  });
+  
+  const { user } = useAuth();
 
-  // 2. Appel à l'API au chargement
+  const fetchMeters = async () => {
+    setChargement(true);
+    try {
+      const response = await axios.get('http://127.0.0.1:8000/compteurs');
+      setMeters(response.data);
+      setFilteredMeters(response.data);
+    } catch (error) {
+      console.error("Erreur API :", error);
+    } finally {
+      setChargement(false);
+    }
+  };
+
   useEffect(() => {
-    axios.get('http://127.0.0.1:8000/compteurs')
-      .then((response) => {
-        setMeters(response.data);
-        setChargement(false);
-      })
-      .catch((error) => {
-        console.error("Erreur API compteurs :", error);
-        setChargement(false);
-      });
+    fetchMeters();
   }, []);
 
+  // Filtrage optimisé
+  useEffect(() => {
+    const results = meters.filter(m =>
+      (m.nom?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+      (m.localisation_atelier?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+      (m.id?.toString() || "").includes(searchTerm)
+    );
+    setFilteredMeters(results);
+  }, [searchTerm, meters]);
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleEditClick = (meter) => {
+    setFormData({
+      id: meter.id,
+      nom: meter.nom || '',
+      localisation_atelier: meter.localisation_atelier || '',
+      type: meter.type || 'Digital'
+    });
+    setIsEditMode(true);
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = async (id) => {
+    if (window.confirm(`Voulez-vous vraiment supprimer le compteur ${id} ?`)) {
+      try {
+        await axios.delete(`http://127.0.0.1:8000/compteurs/${id}`);
+        fetchMeters(); // Rafraîchit la liste après suppression
+      } catch (error) {
+        alert(error.response?.data?.detail || "Erreur lors de la suppression.");
+      }
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      if (isEditMode) {
+        // Envoi au PUT http://127.0.0.1:8000/compteurs/{id}
+        await axios.put(`http://127.0.0.1:8000/compteurs/${formData.id}`, formData);
+      } else {
+        // Envoi au POST http://127.0.0.1:8000/compteurs
+        await axios.post('http://127.0.0.1:8000/compteurs', { ...formData, actif: true });
+      }
+      setIsModalOpen(false);
+      resetForm();
+      fetchMeters();
+    } catch (error) {
+      // Affiche l'erreur précise venant de FastAPI (ex: ID déjà existant)
+      alert(error.response?.data?.detail || "Erreur serveur.");
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({ id: '', nom: '', localisation_atelier: '', type: 'Digital' });
+    setIsEditMode(false);
+  };
+
   return (
-    <div style={{ padding: '2rem', backgroundColor: 'var(--color-bg)', minHeight: '100vh' }}>
+    <div style={{ padding: '2rem', backgroundColor: '#f8fafc', minHeight: '100vh', fontFamily: "'Inter', sans-serif" }}>
       
-      {/* HEADER AVEC RECHERCHE */}
+      {/* HEADER */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <div>
-          <h1 style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <Cpu size={32} color="var(--color-primary)" /> Parc des Compteurs
+          <h1 style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '1.8rem', color: '#1e293b', fontWeight: 'bold' }}>
+            <Database size={32} color="#2563eb" /> Parc Wicmic
           </h1>
-          <p style={{ color: 'var(--color-text-light)' }}>Gestion et monitoring des unités de télérelève</p>
+          <p style={{ color: '#64748b' }}>Gestion des unités de télérelève</p>
         </div>
-        <button className="btn btn-primary" style={{ gap: '8px' }}>
-          <Plus size={20} /> Ajouter un compteur
-        </button>
+        
+        {user?.role === 'Admin' && (
+          <button 
+            onClick={() => { resetForm(); setIsModalOpen(true); }}
+            style={{ 
+              backgroundColor: '#2563eb', color: 'white', border: 'none', 
+              padding: '12px 24px', borderRadius: '10px', cursor: 'pointer', 
+              fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px',
+              boxShadow: '0 4px 12px rgba(37, 99, 235, 0.2)'
+            }}
+          >
+            <Plus size={20} /> Ajouter un compteur
+          </button>
+        )}
       </div>
 
-      {/* BARRE D'OUTILS (RECHERCHE & FILTRES) */}
-      <div className="card card-compact" style={{ marginBottom: '25px', display: 'flex', gap: '15px', alignItems: 'center', backgroundColor: 'white', padding: '10px 20px' }}>
-        <div style={{ position: 'relative', flex: 1 }}>
-          <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-light)' }} />
+      {/* RECHERCHE */}
+      <div style={{ marginBottom: '25px' }}>
+        <div style={{ position: 'relative', maxWidth: '500px', display: 'flex', alignItems: 'center' }}>
+          <Search size={18} style={{ position: 'absolute', left: '15px', color: '#94a3b8', pointerEvents: 'none' }} />
           <input 
             type="text" 
-            className="input" 
-            placeholder="Rechercher par ID, zone ou type..." 
-            style={{ paddingLeft: '40px' }}
+            placeholder="Filtrer par ID, Nom ou Atelier..." 
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{ width: '100%', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '12px 12px 12px 45px', outline: 'none', backgroundColor: 'white' }}
           />
         </div>
-        <button className="btn btn-secondary" style={{ gap: '8px' }}>
-          <Filter size={18} /> Filtres
-        </button>
       </div>
 
-      {/* CHARGEMENT */}
-      {chargement ? (
-        <div style={{ textAlign: 'center', padding: '3rem' }}>
-          <p style={{ fontSize: '1.2rem', color: 'var(--color-text-light)' }}>⏳ Chargement de votre parc de compteurs...</p>
-        </div>
-      ) : (
-        /* TABLEAU DES COMPTEURS */
-        <div className="card" style={{ overflow: 'hidden', backgroundColor: 'white' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-            <thead>
-              <tr style={{ backgroundColor: '#F1F5F9', borderBottom: '2px solid var(--color-border)' }}>
-                <th style={{ padding: '15px' }}>ID Compteur</th>
-                <th style={{ padding: '15px' }}>Zone / Emplacement</th>
-                <th style={{ padding: '15px' }}>Statut</th>
-                <th style={{ padding: '15px' }}>IoT Stats</th>
-                <th style={{ padding: '15px' }}>Action</th>
+      {/* TABLEAU */}
+      <div style={{ backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+          <thead>
+            <tr style={{ backgroundColor: '#f1f5f9' }}>
+              <th style={{ padding: '16px', color: '#475569', fontWeight: '600' }}>ID</th>
+              <th style={{ padding: '16px', color: '#475569', fontWeight: '600' }}>Nom</th>
+              <th style={{ padding: '16px', color: '#475569', fontWeight: '600' }}>Atelier</th>
+              <th style={{ padding: '16px', color: '#475569', fontWeight: '600' }}>Type</th>
+              <th style={{ padding: '16px', color: '#475569', fontWeight: '600', textAlign: 'center' }}>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {!chargement && filteredMeters.map((m) => (
+              <tr key={m.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                <td style={{ padding: '16px', fontWeight: 'bold', color: '#2563eb' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Hash size={14}/>{m.id}</div>
+                </td>
+                <td style={{ padding: '16px', color: '#1e293b', fontWeight: '500' }}>{m.nom}</td>
+                <td style={{ padding: '16px' }}>
+                  <span style={{ backgroundColor: '#f8fafc', padding: '4px 10px', borderRadius: '6px', border: '1px solid #e2e8f0', fontSize: '0.9rem' }}>
+                    {m.localisation_atelier}
+                  </span>
+                </td>
+                <td style={{ padding: '16px', color: '#64748b' }}>{m.type}</td>
+                <td style={{ padding: '16px', textAlign: 'center' }}>
+                  {user?.role === 'Admin' ? (
+                    <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
+                      <button 
+                        onClick={() => handleEditClick(m)}
+                        style={{ backgroundColor: '#2563eb', color: 'white', border: 'none', padding: '8px 12px', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem' }}
+                      >
+                        <Edit size={16} /> Modifier
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(m.id)}
+                        style={{ backgroundColor: '#fee2e2', color: '#ef4444', border: 'none', padding: '8px 12px', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem' }}
+                      >
+                        <Trash2 size={16} /> Supprimer
+                      </button>
+                    </div>
+                  ) : (
+                    <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Lecture seule</span>
+                  )}
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {meters.map((meter) => (
-                <tr key={meter.id} style={{ borderBottom: '1px solid var(--color-border)', transition: '0.2s' }} className="transition-smooth">
-                  <td style={{ padding: '15px' }}>
-                    <div style={{ fontWeight: 'bold', color: 'var(--color-primary-dark)' }}>{meter.id}</div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--color-text-light)' }}>{meter.type || 'Standard'}</div>
-                  </td>
-                  <td style={{ padding: '15px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                      <span>{meter.localisation_atelier || 'Non assignée'}</span>
-                    </div>
-                  </td>
-                  <td style={{ padding: '15px' }}>
-                    {/* Utilisation de meter.actif de SQL Server pour déterminer En ligne / Hors ligne */}
-                    <span className={`badge ${meter.actif ? 'badge-success' : 'badge-danger'}`}>
-                      {meter.actif ? 'En ligne' : 'Hors ligne'}
-                    </span>
-                  </td>
-                  <td style={{ padding: '15px' }}>
-                    <div style={{ display: 'flex', gap: '15px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.85rem', color: 'gray' }}>
-                        <Battery size={14} /> N/A
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.85rem', color: 'gray' }}>
-                        <Wifi size={14} /> N/A
-                      </div>
-                    </div>
-                  </td>
-                  <td style={{ padding: '15px' }}>
-                    <button className="btn btn-secondary btn-sm" style={{ padding: '5px' }} title="Voir les détails">
-                      <Activity size={18} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-              
-              {meters.length === 0 && (
-                <tr>
-                  <td colSpan="5" style={{ textAlign: 'center', padding: '2rem', color: 'gray' }}>
-                    Aucun compteur enregistré dans la base de données.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
+            ))}
+          </tbody>
+        </table>
+        {filteredMeters.length === 0 && !chargement && (
+            <div style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8' }}>Aucun compteur trouvé.</div>
+        )}
+      </div>
 
-      {/* FOOTER / PAGINATION */}
-      {!chargement && meters.length > 0 && (
-        <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <p style={{ fontSize: '0.9rem', color: 'var(--color-text-light)' }}>Affichage de {meters.length} compteurs</p>
-          <div style={{ display: 'flex', gap: '5px' }}>
-            <button className="btn btn-secondary btn-sm">Précédent</button>
-            <button className="btn btn-primary btn-sm">1</button>
-            <button className="btn btn-secondary btn-sm">Suivant</button>
+      {/* MODAL */}
+      {isModalOpen && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, backdropFilter: 'blur(4px)' }}>
+          <div style={{ backgroundColor: 'white', padding: '30px', borderRadius: '16px', width: '450px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', alignItems: 'center' }}>
+              <h2 style={{ fontSize: '1.4rem', fontWeight: 'bold', color: '#1e293b' }}>
+                {isEditMode ? "Mise à jour compteur" : "Nouveau Compteur"}
+              </h2>
+              <X onClick={() => { setIsModalOpen(false); resetForm(); }} style={{ cursor: 'pointer', color: '#94a3b8' }} />
+            </div>
+            
+            <form onSubmit={handleSubmit}>
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', color: '#475569' }}>ID</label>
+                <input 
+                  type="text" name="id" value={formData.id} onChange={handleChange} 
+                  disabled={isEditMode}
+                  placeholder="ex: WIC-001"
+                  style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0', backgroundColor: isEditMode ? '#f1f5f9' : 'white', outline: 'none' }} 
+                  required 
+                />
+              </div>
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', color: '#475569' }}>Nom</label>
+                <input type="text" name="nom" value={formData.nom} onChange={handleChange} placeholder="Nom du compteur" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0', outline: 'none' }} required />
+              </div>
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', color: '#475569' }}>Atelier / Zone</label>
+                <input type="text" name="localisation_atelier" value={formData.localisation_atelier} onChange={handleChange} placeholder="ex: Atelier Teinture" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0', outline: 'none' }} required />
+              </div>
+              <div style={{ marginBottom: '25px' }}>
+                <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', color: '#475569' }}>Type de cadran</label>
+                <select 
+                  name="type" value={formData.type} onChange={handleChange}
+                  style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0', backgroundColor: 'white', outline: 'none' }}
+                >
+                  <option value="Digital">Digital (Rouleaux)</option>
+                  <option value="Analogique">Analogique (Aiguilles)</option>
+                </select>
+              </div>
+
+              <button type="submit" style={{ width: '100%', padding: '14px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '1rem' }}>
+                {isEditMode ? 'Enregistrer les modifications' : 'Ajouter au parc'}
+              </button>
+            </form>
           </div>
         </div>
       )}

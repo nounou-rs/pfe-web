@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { Mail, Lock, Eye, EyeOff, Chrome, MessageSquare, AlertCircle } from "lucide-react";
 import "../styles/authentication.css";
+import axios from "axios";
 
 export default function AuthenticationPage() {
   const navigate = useNavigate();
@@ -30,21 +31,26 @@ export default function AuthenticationPage() {
     if (error) setError("");
   };
 
-  const handleSubmit = async (e) => {
+ const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
 
     try {
       if (isSignup) {
-        // Logique d'inscription (À implémenter plus tard)
-        // Pour l'instant, on redirige vers le login
+        // --- LOGIQUE D'INSCRIPTION RÉELLE ---
+        const response = await axios.post('http://127.0.0.1:8000/signup', {
+          email: formData.email,
+          password: formData.password,
+          fullName: formData.fullName
+        });
+
+        // Succès : on bascule vers le mode connexion avec un message positif
         setIsSignup(false);
-        setError("Compte créé avec succès ! Connectez-vous.");
+        setError(response.data.message); // Affiche "Compte créé avec succès !"
       } else {
-        // Logique de connexion
+        // Logique de connexion (déjà fonctionnelle)
         const result = await login(formData.email, formData.password);
-        
         if (result.success) {
           navigate("/dashboard");
         } else {
@@ -52,7 +58,7 @@ export default function AuthenticationPage() {
         }
       }
     } catch (err) {
-      setError("Une erreur inattendue est survenue");
+      setError(err.response?.data?.detail || "Une erreur est survenue lors de l'inscription.");
     } finally {
       setLoading(false);
     }
@@ -114,7 +120,7 @@ export default function AuthenticationPage() {
               <Mail size={18} className="form-icon" />
               <input
                 id="email"
-                type="text"
+                type="email "
                 name="email"
                 placeholder="vous@entreprise.com"
                 value={formData.email}
