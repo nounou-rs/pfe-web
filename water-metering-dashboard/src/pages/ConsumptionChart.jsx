@@ -1,17 +1,20 @@
+
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Card, CardContent, Typography, CircularProgress, Box } from '@mui/material';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Calendar, Clock, Calendar as CalendarMonth, TrendingUp } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const periods = [
-  { key: 'day', label: 'Aujourd\'hui', icon: Clock },
-  { key: 'week', label: 'Semaine', icon: Calendar },
-  { key: 'month', label: 'Mois', icon: CalendarMonth },
-  { key: 'year', label: 'Année', icon: TrendingUp },
+  { key: 'day', label: 'today', icon: Clock },
+  { key: 'week', label: 'week', icon: Calendar },
+  { key: 'month', label: 'month', icon: CalendarMonth },
+  { key: 'year', label: 'year', icon: TrendingUp },
 ];
 
 export default function ConsumptionChart() {
+  const { t } = useTranslation();
   const [period, setPeriod] = useState('day');
   const [chartData, setChartData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -43,11 +46,11 @@ export default function ConsumptionChart() {
   // Déterminer le label et la clé de l'axe X en fonction de la période choisie
   const getDisplaySettings = () => {
     switch(period) {
-      case 'day': return { label: 'Consommation aujourd\'hui', dataKey: 'time' };
-      case 'week': return { label: 'Consommation cette semaine', dataKey: 'date' };
-      case 'month': return { label: 'Consommation sur 30 jours', dataKey: 'date' };
-      case 'year': return { label: 'Consommation annuelle', dataKey: 'date' };
-      default: return { label: 'Consommation', dataKey: 'time' };
+      case 'day': return { label: t('consumption_today', "Consommation aujourd'hui"), dataKey: 'time' };
+      case 'week': return { label: t('consumption_week', 'Consommation cette semaine'), dataKey: 'date' };
+      case 'month': return { label: t('consumption_30_days', 'Consommation sur 30 jours'), dataKey: 'date' };
+      case 'year': return { label: t('consumption_year', 'Consommation annuelle'), dataKey: 'date' };
+      default: return { label: t('consumption', 'Consommation'), dataKey: 'time' };
     }
   };
 
@@ -78,7 +81,7 @@ export default function ConsumptionChart() {
                   }}
                 >
                   <Icon size={16} />
-                  {p.label}
+                  {t(p.label, p.label.charAt(0).toUpperCase() + p.label.slice(1))}
                 </button>
               );
             })}
@@ -91,7 +94,7 @@ export default function ConsumptionChart() {
           </Box>
         ) : chartData.length === 0 ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 300 }}>
-            <Typography color="textSecondary">Aucune donnée trouvée.</Typography>
+            <Typography color="textSecondary">{t('no_data_found', 'Aucune donnée trouvée.')}</Typography>
           </Box>
         ) : (
           <ResponsiveContainer width="100%" height={300}>

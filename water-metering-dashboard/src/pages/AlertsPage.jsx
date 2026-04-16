@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useTranslation } from 'react-i18next';
 import { 
   Box, Typography, Paper, IconButton, Chip, CircularProgress, Alert,
   Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button
@@ -7,6 +8,7 @@ import {
 import { AlertCircle, MapPin, Eye, Trash2, AlertTriangle } from 'lucide-react';
 
 export default function AlertsPage() {
+  const { t } = useTranslation();
   const [alertes, setAlertes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
@@ -71,16 +73,16 @@ export default function AlertsPage() {
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Box>
           <Typography variant="h4" sx={{ fontWeight: 700, color: '#ef4444', display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <AlertCircle size={32} /> Centre des Alertes
+            <AlertCircle size={32} /> {t('alerts_center', 'Centre des Alertes')}
           </Typography>
           <Typography variant="body1" sx={{ color: '#64748b', mt: 1 }}>
-            {alertes.length} alertes actives nécessitant votre attention immédiate.
+            {alertes.length} {t('alerts_active', 'alertes actives nécessitant votre attention immédiate.')}
           </Typography>
         </Box>
         
         {alertes.length > 0 && (
           <Chip 
-            label="Système en Alerte" 
+            label={t('system_alert', 'Système en Alerte')} 
             sx={{ 
               bgcolor: '#fee2e2', color: '#ef4444', fontWeight: 600, 
               fontSize: '1rem', py: 2.5, px: 1, borderRadius: '12px' 
@@ -101,7 +103,7 @@ export default function AlertsPage() {
       ) : alertes.length === 0 ? (
         <Paper elevation={0} sx={{ p: 5, textAlign: 'center', borderRadius: '16px', border: '1px dashed #cbd5e1' }}>
           <Typography sx={{ color: '#64748b', fontSize: '1.1rem' }}>
-            Aucune alerte active. Votre parc de compteurs fonctionne parfaitement.
+            {t('no_active_alert', 'Aucune alerte active. Votre parc de compteurs fonctionne parfaitement.')}
           </Typography>
         </Paper>
       ) : (
@@ -132,11 +134,11 @@ export default function AlertsPage() {
                   
                   <Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 0.5 }}>
-                      <Typography variant="h6" sx={{ fontWeight: 700, color: '#1e293b' }}>
-                        {alerte.type_anomalie}
-                      </Typography>
+                        <Typography variant="h6" sx={{ fontWeight: 700, color: '#1e293b' }}>
+                          {t(alerte.type_anomalie, alerte.type_anomalie)}
+                        </Typography>
                       <Chip 
-                        label={alerte.severite} 
+                        label={t(alerte.severite, alerte.severite)} 
                         size="small" 
                         sx={{ bgcolor: colors.bg, color: colors.text, fontWeight: 600, fontSize: '0.75rem' }} 
                       />
@@ -146,7 +148,7 @@ export default function AlertsPage() {
                     </Box>
                     
                     <Typography variant="body1" sx={{ fontWeight: 600, color: '#334155', mb: 0.5 }}>
-                      Compteur : {alerte.compteur_id} — {alerte.compteur_nom}
+                      {t('meter', 'Compteur')} : {alerte.compteur_id} — {alerte.compteur_nom}
                     </Typography>
                     
                     <Typography variant="body2" sx={{ color: '#64748b' }}>
@@ -188,8 +190,8 @@ export default function AlertsPage() {
         </DialogTitle>
         <DialogContent>
           <DialogContentText sx={{ color: '#334155', mt: 1 }}>
-            Voulez-vous vraiment supprimer cette alerte ? <br/>
-            Cette action effacera la notification de votre tableau de bord.
+            {t('alert_delete_confirm', 'Voulez-vous vraiment supprimer cette alerte ?')} <br/>
+            {t('alert_delete_warning', 'Cette action effacera la notification de votre tableau de bord.')}
           </DialogContentText>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
@@ -198,7 +200,7 @@ export default function AlertsPage() {
             color="inherit" 
             sx={{ textTransform: 'none', fontWeight: 600, color: '#64748b' }}
           >
-            Annuler
+            {t('cancel', 'Annuler')}
           </Button>
           <Button 
             onClick={confirmDeleteAlerte} 
@@ -207,7 +209,7 @@ export default function AlertsPage() {
             autoFocus
             sx={{ textTransform: 'none', fontWeight: 600, boxShadow: 'none', borderRadius: '6px' }}
           >
-            Supprimer
+            {t('delete', 'Supprimer')}
           </Button>
         </DialogActions>
       </Dialog>

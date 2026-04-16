@@ -1,29 +1,47 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Globe } from 'lucide-react';
+import { Select, MenuItem, Box, Typography } from '@mui/material';
 
-export default function LanguageSwitcher() {
+const LanguageSwitcher = () => {
   const { i18n } = useTranslation();
 
-  const changeLanguage = (e) => {
-    i18n.changeLanguage(e.target.value);
-    
-    // Si on choisit l'Arabe, on inverse le sens de lecture (RTL)
-    document.dir = e.target.value === 'ar' ? 'rtl' : 'ltr';
+  // Fonction appelée quand on choisit une nouvelle langue
+  const changeLanguage = (event) => {
+    const newLang = event.target.value;
+    i18n.changeLanguage(newLang);
   };
 
+  // 💡 ASTUCE PRO : Gestion de l'Arabe (RTL - Right to Left)
+  useEffect(() => {
+    // Si la langue est l'arabe, on inverse le sens de lecture du site
+    document.dir = i18n.language === 'ar' ? 'rtl' : 'ltr';
+  }, [i18n.language]);
+
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px', backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-      <Globe size={18} color="#64748b" />
-      <select 
-        onChange={changeLanguage} 
-        value={i18n.resolvedLanguage}
-        style={{ border: 'none', outline: 'none', backgroundColor: 'transparent', color: '#334155', fontWeight: '500', cursor: 'pointer' }}
+    <Box>
+      <Select
+        value={i18n.language || 'fr'} // Langue actuelle
+        onChange={changeLanguage}
+        size="small"
+        sx={{ 
+          minWidth: 140, 
+          borderRadius: '8px',
+          bgcolor: 'white',
+          '& .MuiSelect-select': { display: 'flex', alignItems: 'center', gap: 1 }
+        }}
       >
-        <option value="fr">Français</option>
-        <option value="en">English</option>
-        <option value="ar">العربية</option>
-      </select>
-    </div>
+        <MenuItem value="fr">
+          <Typography variant="body2" sx={{ fontWeight: 500 }}>🇫🇷 Français</Typography>
+        </MenuItem>
+        <MenuItem value="en">
+          <Typography variant="body2" sx={{ fontWeight: 500 }}>🇬🇧 English</Typography>
+        </MenuItem>
+        <MenuItem value="ar">
+          <Typography variant="body2" sx={{ fontWeight: 500 }}>🇹🇳 العربية</Typography>
+        </MenuItem>
+      </Select>
+    </Box>
   );
-}
+};
+
+export default LanguageSwitcher;

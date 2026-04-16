@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { 
@@ -5,8 +6,10 @@ import {
   CircularProgress, Chip, Fade
 } from '@mui/material';
 import { Brain, Send, Bot, ChevronRight, Sparkles } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export default function PredictionsPage() {
+  const { t } = useTranslation();
   const [insights, setInsights] = useState([]);
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
@@ -40,7 +43,7 @@ export default function PredictionsPage() {
     try {
       const res = await axios.get('http://127.0.0.1:8000/chat/messages');
       if (res.data.length === 0) {
-        setMessages([{ expediteur: 'ai', texte: 'Bonjour ! Je suis l\'intelligence Wicmic. Je peux analyser vos consommations ou détecter des fuites. Que souhaitez-vous savoir ?' }]);
+        setMessages([{ expediteur: 'ai', texte: t('ai_greeting', "Bonjour ! Je suis l'intelligence Wicmic. Je peux analyser vos consommations ou détecter des fuites. Que souhaitez-vous savoir ?") }]);
       } else {
         setMessages(res.data);
       }
@@ -64,7 +67,7 @@ export default function PredictionsPage() {
       setMessages(prev => [...prev, { expediteur: 'ai', texte: res.data.ai_message }]);
     } catch (error) {
       console.error("Erreur envoi:", error);
-      setMessages(prev => [...prev, { expediteur: 'ai', texte: 'Désolé, une erreur de communication est survenue.' }]);
+      setMessages(prev => [...prev, { expediteur: 'ai', texte: t('ai_error', 'Désolé, une erreur de communication est survenue.') }]);
     } finally {
       setIsTyping(false);
     }
@@ -83,10 +86,10 @@ export default function PredictionsPage() {
             </Box>
             <Box>
               <Typography variant="h5" sx={{ fontWeight: 800, color: '#0f172a', letterSpacing: '-0.5px' }}>
-                Centre d'Analyse IA
+                {t('ai_analysis_center', "Centre d'Analyse IA")}
               </Typography>
               <Typography variant="body2" sx={{ color: '#64748b', mt: 0.5 }}>
-                Détections automatiques et recommandations
+                {t('ai_auto_detection', 'Détections automatiques et recommandations')}
               </Typography>
             </Box>
           </Box>
@@ -142,7 +145,7 @@ export default function PredictionsPage() {
                     {insight.conseil_ia ? (
                       <Box sx={{ bgcolor: '#f8fafc', p: 1.5, borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                         <Typography variant="body2" sx={{ fontWeight: 600, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Bot size={16} color="#0284c7" /> Conseil IA
+                          <Bot size={16} color="#0284c7" /> {t('ai_advice', 'Conseil IA')}
                         </Typography>
                         <Typography variant="body2" sx={{ color: '#334155', mt: 0.5 }}>
                           {insight.conseil_ia}
@@ -150,7 +153,7 @@ export default function PredictionsPage() {
                       </Box>
                     ) : (
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: '#0284c7', fontWeight: 600, cursor: 'pointer', fontSize: '0.9rem', '&:hover': { color: '#0369a1' } }}>
-                        Voir les détails <ChevronRight size={18} />
+                        {t('see_details', 'Voir les détails')} <ChevronRight size={18} />
                       </Box>
                     )}
                   </Paper>
@@ -176,8 +179,8 @@ export default function PredictionsPage() {
                   <Box sx={{ position: 'absolute', bottom: 0, right: 0, width: 12, height: 12, bgcolor: '#22c55e', borderRadius: '50%', border: '2px solid white' }} />
                 </Box>
                 <Box>
-                  <Typography sx={{ fontWeight: 700, color: '#0f172a', fontSize: '1.1rem' }}>Assistant Wicmic</Typography>
-                  <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 500 }}>En ligne - Prêt à analyser</Typography>
+                  <Typography sx={{ fontWeight: 700, color: '#0f172a', fontSize: '1.1rem' }}>{t('ai_assistant', 'Assistant Wicmic')}</Typography>
+                  <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 500 }}>{t('ai_online', 'En ligne - Prêt à analyser')}</Typography>
                 </Box>
               </Box>
             </Box>
@@ -229,29 +232,29 @@ export default function PredictionsPage() {
 
             {/* Zone de saisie */}
             <Box component="form" onSubmit={handleSendMessage} sx={{ p: 2.5, bgcolor: '#ffffff', borderTop: '1px solid #e2e8f0' }}>
-              <TextField
-                fullWidth
-                placeholder="Posez une question (ex: 'Y a-t-il une fuite ?')..."
-                value={inputMessage}
-                onChange={(e) => setInputMessage(e.target.value)}
-                variant="outlined"
-                InputProps={{
-                  sx: { 
-                    borderRadius: '24px', 
-                    bgcolor: '#f1f5f9',
-                    '& fieldset': { border: 'none' },
-                    '&:hover fieldset': { border: 'none' },
-                    '&.Mui-focused fieldset': { border: '1px solid #cbd5e1' },
-                  },
-                  endAdornment: (
-                    <Box sx={{ bgcolor: inputMessage.trim() ? '#0284c7' : 'transparent', borderRadius: '50%', transition: 'all 0.2s' }}>
-                      <IconButton type="submit" disabled={!inputMessage.trim() || isTyping} sx={{ color: inputMessage.trim() ? '#ffffff' : '#94a3b8' }}>
-                        <Send size={18} />
-                      </IconButton>
-                    </Box>
-                  )
-                }}
-              />
+                <TextField
+                  fullWidth
+                  placeholder={t('ask_question_placeholder', "Posez une question (ex: 'Y a-t-il une fuite ?')...")}
+                  value={inputMessage}
+                  onChange={(e) => setInputMessage(e.target.value)}
+                  variant="outlined"
+                  InputProps={{
+                    sx: { 
+                      borderRadius: '24px', 
+                      bgcolor: '#f1f5f9',
+                      '& fieldset': { border: 'none' },
+                      '&:hover fieldset': { border: 'none' },
+                      '&.Mui-focused fieldset': { border: '1px solid #cbd5e1' },
+                    },
+                    endAdornment: (
+                      <Box sx={{ bgcolor: inputMessage.trim() ? '#0284c7' : 'transparent', borderRadius: '50%', transition: 'all 0.2s' }}>
+                        <IconButton type="submit" disabled={!inputMessage.trim() || isTyping} sx={{ color: inputMessage.trim() ? '#ffffff' : '#94a3b8' }}>
+                          <Send size={18} />
+                        </IconButton>
+                      </Box>
+                    )
+                  }}
+                />
             </Box>
 
           </Paper>

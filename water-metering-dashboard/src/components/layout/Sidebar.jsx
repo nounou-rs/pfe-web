@@ -1,21 +1,24 @@
+
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Map, Droplet, AlertCircle, Camera, Brain, FileText, ChevronRight, Settings } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 // J'ai retiré le "badge: 12" statique d'ici
 const menuItems = [
-  { text: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
-  { text: 'Carte', icon: Map, path: '/map' },
-  { text: 'Compteurs', icon: Droplet, path: '/meters' },
-  { text: 'Alertes', icon: AlertCircle, path: '/alerts' }, 
-  { text: 'Live Capture', icon: Camera, path: '/Live Capture' },
-  { text: 'Prédictions IA', icon: Brain, path: '/predictions' },
-  { text: 'Rapports', icon: FileText, path: '/reports' },
-  { text: 'Paramètres', icon: Settings, path: '/settings' }
+  { key: 'dashboard', text: 'dashboard', icon: LayoutDashboard, path: '/dashboard' },
+  { key: 'map', text: 'map_title', icon: Map, path: '/map' },
+  { key: 'meters', text: 'meters_title', icon: Droplet, path: '/meters' },
+  { key: 'alerts', text: 'alerts', icon: AlertCircle, path: '/alerts' }, 
+  { key: 'live_capture', text: 'live_capture', icon: Camera, path: '/Live Capture' },
+  { key: 'predictions', text: 'predictions', icon: Brain, path: '/predictions' },
+  { key: 'reports', text: 'reports_title', icon: FileText, path: '/reports' },
+  { key: 'settings', text: 'settings_title', icon: Settings, path: '/settings' }
 ];
 
 export default function Sidebar({ isOpen = true }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -66,7 +69,7 @@ export default function Sidebar({ isOpen = true }) {
           color: '#64748B',
           textTransform: 'uppercase',
           letterSpacing: '0.05em'
-        }}>Menu</h2>
+        }}>{t('menu', 'Menu')}</h2>
       </div>
 
       {/* Navigation Items */}
@@ -79,13 +82,11 @@ export default function Sidebar({ isOpen = true }) {
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
-            
             // On vérifie si c'est l'onglet "Alertes" pour lui attribuer le compteur dynamique
-            const displayBadge = item.text === 'Alertes' ? (alertCount > 0 ? alertCount : null) : item.badge;
-            
+            const displayBadge = item.key === 'alerts' ? (alertCount > 0 ? alertCount : null) : item.badge;
             return (
               <button
-                key={item.text}
+                key={item.key}
                 onClick={() => navigate(item.path)}
                 style={{
                   width: '100%',
@@ -111,9 +112,8 @@ export default function Sidebar({ isOpen = true }) {
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <Icon size={18} color={isActive ? '#0078B8' : '#94A3B8'} />
-                  <span>{item.text}</span>
+                  <span>{t(item.text)}</span>
                 </div>
-                
                 {/* Affichage du badge s'il existe et est supérieur à 0 */}
                 {displayBadge && (
                   <span style={{
@@ -127,7 +127,6 @@ export default function Sidebar({ isOpen = true }) {
                     {displayBadge}
                   </span>
                 )}
-                
                 {isActive && <ChevronRight size={16} color="#0078B8" />}
               </button>
             );
@@ -142,7 +141,7 @@ export default function Sidebar({ isOpen = true }) {
         fontSize: '12px',
         color: '#64748B'
       }}>
-        <p>WICMIC v1.0.0</p>
+        <p>{t('app_version', 'WICMIC v1.0.0')}</p>
       </div>
     </aside>
   );
