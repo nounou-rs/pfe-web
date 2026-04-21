@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { Mail, Lock, Eye, EyeOff, Chrome, MessageSquare, AlertCircle } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, Chrome, AlertCircle } from "lucide-react";
 import "../styles/authentication.css";
 import axios from "axios";
 
@@ -37,17 +37,17 @@ export default function AuthenticationPage() {
     setError("");
 
     try {
-      if (isSignup) {
+     if (isSignup) {
         // --- LOGIQUE D'INSCRIPTION RÉELLE ---
         const response = await axios.post('http://127.0.0.1:8000/signup', {
           email: formData.email,
           password: formData.password,
-          fullName: formData.fullName
+          full_name: formData.fullName
         });
 
-        // Succès : on bascule vers le mode connexion avec un message positif
-        setIsSignup(false);
-        setError(response.data.message); // Affiche "Compte créé avec succès !"
+        // Succès : Redirection vers la page de vérification OTP en passant l'e-mail dans le state
+        navigate("/verify-otp", { state: { email: formData.email } });
+        
       } else {
         // Logique de connexion (déjà fonctionnelle)
         const result = await login(formData.email, formData.password);

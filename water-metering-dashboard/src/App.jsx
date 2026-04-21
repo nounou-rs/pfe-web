@@ -18,28 +18,20 @@ import ReportsPage from './pages/ReportsPage';
 import UsersPage from './pages/UsersPage';
 import SettingsPage from './pages/SettingsPage';
 import websocketService from './services/websocket';
+import VerifyOTP from './pages/VerifyOtpPage'; // Import correct
 
 const theme = createTheme({
   palette: {
-    primary: { main: '#0078B8' }, // Bleu WICMIC
+    primary: { main: '#0078B8' },
     secondary: { main: '#8b5cf6' },
-    error: { main: '#ef4444' },
-    warning: { main: '#f59e0b' },
-    success: { main: '#10b981' },
     background: { default: '#F8FAFC' }
   },
-  typography: {
-    fontFamily: '"Inter", "system-ui", sans-serif',
-  }
+  typography: { fontFamily: '"Inter", "system-ui", sans-serif' }
 });
 
-// Composant pour protéger les routes privées
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
-  
   if (loading) return <div>Chargement...</div>;
-  
-  // Si pas d'utilisateur, on redirige vers la page d'auth
   return user ? children : <Navigate to="/auth" replace />;
 };
 
@@ -55,15 +47,15 @@ function AppRoutes() {
 
   return (
     <Routes>
-      {/* Route Publique : Authentification */}
-      <Route path="/auth" element={
-        !user ? <AuthenticationPage /> : <Navigate to="/dashboard" replace />
-      } />
-
-      {/* Redirections pour compatibilité */}
+      {/* ROUTES PUBLIQUES (Accessibles sans être connecté) */}
+      <Route path="/auth" element={!user ? <AuthenticationPage /> : <Navigate to="/dashboard" replace />} />
+      
+      {/* ⚠️ CRUCIAL : La page OTP doit être publique car l'utilisateur n'est pas encore loggé */}
+      <Route path="/verify-otp" element={<VerifyOTP />} />
+      
       <Route path="/login" element={<Navigate to="/auth" replace />} />
 
-      {/* Routes Privées (Protégées) */}
+      {/* ROUTES PRIVÉES */}
       <Route path="/*" element={
         <PrivateRoute>
           <Layout>

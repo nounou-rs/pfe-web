@@ -8,20 +8,25 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Vérification du token au démarrage de l'application (Refresh/F5)
+  // 1. Vérification sécurisée au démarrage (Refresh/F5)
   useEffect(() => {
-    const checkAuth = async () => {
-      const token = localStorage.getItem('wicmicToken');
-      const storedUser = localStorage.getItem('wicmicUser');
+    const checkAuth = () => {
+      try {
+        const token = localStorage.getItem('wicmicToken');
+        const storedUser = localStorage.getItem('wicmicUser');
 
-      if (token && storedUser) {
-        // En attendant d'avoir une route '/me', on restaure les infos sauvegardées localement
-        setUser(JSON.parse(storedUser));
-      } else {
-        // Nettoyage par sécurité s'il manque des données
-        localStorage.removeItem('wicmicToken');
-        localStorage.removeItem('wicmicUser');
-        setUser(null);
+        // SÉCURITÉ : On vérifie que les données existent ET ne sont pas la chaîne "undefined"
+        if (token && storedUser && storedUser !== "undefined") {
+          setUser(JSON.parse(storedUser));
+        } else {
+          // Nettoyage automatique si les données sont incomplètes ou corrompues
+          localStorage.removeItem('wicmicToken');
+          localStorage.removeItem('wicmicUser');
+          setUser(null);
+        }
+      } catch (error) {
+        console.error("Erreur lors de la lecture de la session :", error);
+        localStorage.clear();
       }
       setLoading(false);
     };
@@ -29,38 +34,53 @@ export const AuthProvider = ({ children }) => {
     checkAuth();
   }, []);
 
+  // 2. Fonction de connexion alignée sur ton Backend FastAPI
   const login = async (email, password) => {
     try {
-      // VRAI APPEL API vers ton backend FastAPI
-      // Note : on mappe ton champ "email" de l'interface vers le champ "nom" attendu par FastAPI
       const response = await axios.post('http://127.0.0.1:8000/login', { 
-        nom: email, 
-        mot_de_passe: password 
+        email: email, 
+        password: password 
       });
       
-      // Si FastAPI répond avec un succès (Code 200) :
-      const realToken = response.data.token;
-      const realUser = response.data.utilisateur;
+      const data = response.data;
       
-      // On sauvegarde la vraie session
-      localStorage.setItem('wicmicToken', realToken);
-      localStorage.setItem('wicmicUser', JSON.stringify(realUser));
-      setUser(realUser);
+      if (data.success) {
+        // On crée l'objet utilisateur à partir des clés renvoyées par ton FastAPI
+        const userData = {
+          nom: data.user_name,
+          role: data.role
+        };
+
+        // Sauvegarde dans le localStorage
+        localStorage.setItem('wicmicToken', data.access_token); // access_token = clé FastAPI
+        localStorage.setItem('wicmicUser', JSON.stringify(userData));
+        
+        setUser(userData);
+        return { success: true };
+      }
       
-      return { success: true };
+      return { success: false, error: "Erreur de connexion inattendue" };
 
     } catch (error) {
-      // Si FastAPI renvoie une erreur (ex: Code 401 pour mauvais mot de passe)
       console.error("Erreur API Login :", error);
-      if (error.response && error.response.status === 401) {
-        return { success: false, error: "Nom d'utilisateur ou mot de passe incorrect" };
+      
+      // Gestion des messages d'erreur du backend
+      if (error.response) {
+        if (error.response.status === 401) {
+          return { success: false, error: "Email ou mot de passe incorrect" };
+        }
+        if (error.response.status === 403) {
+          return { success: false, error: "Veuillez valider votre e-mail avant de vous connecter" };
+        }
+        return { success: false, error: error.response.data.detail || "Erreur serveur" };
       }
-      return { success: false, error: 'Erreur de communication avec le serveur (Vérifiez FastAPI)' };
+      
+      return { success: false, error: 'Impossible de contacter le serveur. Vérifiez que FastAPI est lancé.' };
     }
   };
 
+  // 3. Déconnexion
   const logout = () => {
-    // Déconnexion réelle
     localStorage.removeItem('wicmicToken');
     localStorage.removeItem('wicmicUser');
     setUser(null);
@@ -68,6 +88,7 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider value={{ user, login, logout, loading, isAuthenticated: !!user }}>
+      {/* On n'affiche l'app que quand la vérification initiale est terminée */}
       {!loading && children}
     </AuthContext.Provider>
   );
