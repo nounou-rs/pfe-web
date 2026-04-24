@@ -1,63 +1,37 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
-import { Search, Plus, Edit, Trash2, X, Database, Hash } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, X, Database, Hash, MapPin } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button } from '@mui/material';
-import { AlertTriangle } from 'lucide-react'; // Pour l'icône d'avertissement
+import { AlertTriangle } from 'lucide-react';
 
 const MetersPage = () => {
   const { t } = useTranslation();
+  const { user } = useAuth();
+
+  // États pour les données
   const [meters, setMeters] = useState([]);
   const [filteredMeters, setFilteredMeters] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [chargement, setChargement] = useState(true);
-  
+
+  // États pour les Modaux
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
-
-  // 1. L'état pour contrôler la boîte de dialogue de suppression
   const [deleteDialog, setDeleteDialog] = useState({ open: false, meterId: null, meterName: '' });
 
-  // 2. Fonction pour OUVRIR la boîte (à appeler quand on clique sur le bouton "Supprimer" du tableau)
-  const requestDeleteMeter = (id, nom) => {
-    setDeleteDialog({ open: true, meterId: id, meterName: nom });
-  };
-
-  // 3. Fonction pour ANNULER et fermer la boîte
-  const cancelDelete = () => {
-    setDeleteDialog({ open: false, meterId: null, meterName: '' });
-  };
-
-  // 4. Fonction pour CONFIRMER la suppression (C'est ici que tu mets ton code Axios)
-  const confirmDelete = async () => {
-    try {
-      // Remplace cette ligne par ton vrai appel API de suppression
-      await axios.delete(`http://127.0.0.1:8000/compteurs/${deleteDialog.meterId}`);
-      
-      // Mettre à jour ta liste de compteurs ici (ex: fetchMeters() ou setMeters(...))
-      
-      // Fermer la boîte de dialogue
-      setDeleteDialog({ open: false, meterId: null, meterName: '' });
-      
-      // Afficher un message de succès (si tu as un Snackbar)
-      // setToast({ open: true, message: "Compteur supprimé avec succès", severity: "success" });
-      
-    } catch (error) {
-      console.error("Erreur lors de la suppression", error);
-      // Gérer l'erreur...
-      setDeleteDialog({ open: false, meterId: null, meterName: '' });
-    }
-  };
-  
+  // État du formulaire
   const [formData, setFormData] = useState({
     id: '',
     nom: '',
     localisation_atelier: '',
-    type: 'Digital'
+    type: 'Digital',
+    latitude: '',
+    longitude: ''
   });
-  
-  const { user } = useAuth();
+
+  // --- LOGIQUE API ---
 
   const fetchMeters = async () => {
     setChargement(true);
@@ -76,7 +50,7 @@ const MetersPage = () => {
     fetchMeters();
   }, []);
 
-  // Filtrage optimisé
+  // Filtrage temps réel
   useEffect(() => {
     const results = meters.filter(m =>
       (m.nom?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
@@ -86,8 +60,28 @@ const MetersPage = () => {
     setFilteredMeters(results);
   }, [searchTerm, meters]);
 
+  // --- ACTIONS FORMULAIRE ---
+
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    // Conversion en nombre pour la latitude et longitude
+    if (name === 'latitude' || name === 'longitude') {
+      setFormData({ ...formData, [name]: value === '' ? '' : parseFloat(value) });
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({ 
+      id: '', 
+      nom: '', 
+      localisation_atelier: '', 
+      type: 'Digital', 
+      latitude: '', 
+      longitude: '' 
+    });
+    setIsEditMode(false);
   };
 
   const handleEditClick = (meter) => {
@@ -95,7 +89,9 @@ const MetersPage = () => {
       id: meter.id,
       nom: meter.nom || '',
       localisation_atelier: meter.localisation_atelier || '',
-      type: meter.type || 'Digital'
+      type: meter.type || 'Digital',
+      latitude: meter.latitude || '',
+      longitude: meter.longitude || ''
     });
     setIsEditMode(true);
     setIsModalOpen(true);
@@ -105,24 +101,36 @@ const MetersPage = () => {
     e.preventDefault();
     try {
       if (isEditMode) {
-        // Envoi au PUT http://127.0.0.1:8000/compteurs/{id}
         await axios.put(`http://127.0.0.1:8000/compteurs/${formData.id}`, formData);
       } else {
-        // Envoi au POST http://127.0.0.1:8000/compteurs
         await axios.post('http://127.0.0.1:8000/compteurs', { ...formData, actif: true });
       }
       setIsModalOpen(false);
       resetForm();
       fetchMeters();
     } catch (error) {
-      // Affiche l'erreur précise venant de FastAPI (ex: ID déjà existant)
       alert(error.response?.data?.detail || "Erreur serveur.");
     }
   };
 
-  const resetForm = () => {
-    setFormData({ id: '', nom: '', localisation_atelier: '', type: 'Digital' });
-    setIsEditMode(false);
+  // --- SUPPRESSION ---
+
+  const requestDeleteMeter = (id, nom) => {
+    setDeleteDialog({ open: true, meterId: id, meterName: nom });
+  };
+
+  const cancelDelete = () => {
+    setDeleteDialog({ open: false, meterId: null, meterName: '' });
+  };
+
+  const confirmDelete = async () => {
+    try {
+      await axios.delete(`http://127.0.0.1:8000/compteurs/${deleteDialog.meterId}`);
+      setDeleteDialog({ open: false, meterId: null, meterName: '' });
+      fetchMeters();
+    } catch (error) {
+      console.error("Erreur lors de la suppression", error);
+    }
   };
 
   return (
@@ -174,7 +182,7 @@ const MetersPage = () => {
               <th style={{ padding: '16px', color: '#475569', fontWeight: '600' }}>{t('meter_id', 'ID')}</th>
               <th style={{ padding: '16px', color: '#475569', fontWeight: '600' }}>{t('meter_name', 'Nom')}</th>
               <th style={{ padding: '16px', color: '#475569', fontWeight: '600' }}>{t('meter_zone', 'Atelier')}</th>
-              <th style={{ padding: '16px', color: '#475569', fontWeight: '600' }}>{t('meter_type', 'Type')}</th>
+              <th style={{ padding: '16px', color: '#475569', fontWeight: '600' }}>GPS</th>
               <th style={{ padding: '16px', color: '#475569', fontWeight: '600', textAlign: 'center' }}>{t('actions', 'Actions')}</th>
             </tr>
           </thead>
@@ -190,7 +198,9 @@ const MetersPage = () => {
                     {m.localisation_atelier}
                   </span>
                 </td>
-                <td style={{ padding: '16px', color: '#64748b' }}>{m.type}</td>
+                <td style={{ padding: '16px', color: '#64748b', fontSize: '0.85rem' }}>
+                   {m.latitude ? <div style={{display:'flex', alignItems:'center', gap:'4px'}}><MapPin size={12}/> {m.latitude.toFixed(4)}, {m.longitude.toFixed(4)}</div> : "Non défini"}
+                </td>
                 <td style={{ padding: '16px', textAlign: 'center' }}>
                   {user?.role === 'Admin' ? (
                     <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
@@ -220,10 +230,10 @@ const MetersPage = () => {
         )}
       </div>
 
-      {/* MODAL */}
+      {/* MODAL AJOUT / EDITION */}
       {isModalOpen && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, backdropFilter: 'blur(4px)' }}>
-          <div style={{ backgroundColor: 'white', padding: '30px', borderRadius: '16px', width: '450px' }}>
+          <div style={{ backgroundColor: 'white', padding: '30px', borderRadius: '16px', width: '480px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', alignItems: 'center' }}>
               <h2 style={{ fontSize: '1.4rem', fontWeight: 'bold', color: '#1e293b' }}>
                 {isEditMode ? t('update_meter', 'Mise à jour compteur') : t('new_meter', 'Nouveau Compteur')}
@@ -233,25 +243,38 @@ const MetersPage = () => {
             
             <form onSubmit={handleSubmit}>
               <div style={{ marginBottom: '15px' }}>
-                <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', color: '#475569' }}>{t('meter_id', 'ID')}</label>
+                <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', color: '#475569', fontSize: '0.9rem' }}>{t('meter_id', 'ID')}</label>
                 <input 
                   type="text" name="id" value={formData.id} onChange={handleChange} 
                   disabled={isEditMode}
-                  placeholder={t('meter_id_placeholder', 'ex: WIC-001')}
+                  placeholder="ex: WIC-001"
                   style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0', backgroundColor: isEditMode ? '#f1f5f9' : 'white', outline: 'none' }} 
                   required 
                 />
               </div>
               <div style={{ marginBottom: '15px' }}>
-                <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', color: '#475569' }}>{t('meter_name', 'Nom')}</label>
-                <input type="text" name="nom" value={formData.nom} onChange={handleChange} placeholder={t('meter_name_placeholder', 'Nom du compteur')} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0', outline: 'none' }} required />
+                <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', color: '#475569', fontSize: '0.9rem' }}>{t('meter_name', 'Nom')}</label>
+                <input type="text" name="nom" value={formData.nom} onChange={handleChange} placeholder="Nom du compteur" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0', outline: 'none' }} required />
               </div>
               <div style={{ marginBottom: '15px' }}>
-                <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', color: '#475569' }}>{t('meter_zone', 'Atelier / Zone')}</label>
-                <input type="text" name="localisation_atelier" value={formData.localisation_atelier} onChange={handleChange} placeholder={t('meter_zone_placeholder', 'ex: Atelier Teinture')} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0', outline: 'none' }} required />
+                <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', color: '#475569', fontSize: '0.9rem' }}>{t('meter_zone', 'Atelier / Zone')}</label>
+                <input type="text" name="localisation_atelier" value={formData.localisation_atelier} onChange={handleChange} placeholder="ex: Atelier Teinture" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0', outline: 'none' }} required />
               </div>
+
+              {/* CHAMPS GPS COTE A COTE */}
+              <div style={{ display: 'flex', gap: '15px', marginBottom: '15px' }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', color: '#475569', fontSize: '0.9rem' }}>Latitude</label>
+                  <input type="number" step="any" name="latitude" value={formData.latitude} onChange={handleChange} placeholder="37.2248" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0', outline: 'none' }} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', color: '#475569', fontSize: '0.9rem' }}>Longitude</label>
+                  <input type="number" step="any" name="longitude" value={formData.longitude} onChange={handleChange} placeholder="10.0942" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0', outline: 'none' }} />
+                </div>
+              </div>
+
               <div style={{ marginBottom: '25px' }}>
-                <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', color: '#475569' }}>{t('meter_type_label', 'Type de cadran')}</label>
+                <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', color: '#475569', fontSize: '0.9rem' }}>{t('meter_type_label', 'Type de cadran')}</label>
                 <select 
                   name="type" value={formData.type} onChange={handleChange}
                   style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0', backgroundColor: 'white', outline: 'none' }}
@@ -261,14 +284,15 @@ const MetersPage = () => {
                 </select>
               </div>
 
-              <button type="submit" style={{ width: '100%', padding: '14px', backgroundColor: '#0284c7', color: 'white', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '1rem' }}>
+              <button type="submit" style={{ width: '100%', padding: '14px', backgroundColor: '#0284c7', color: 'white', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '1rem', transition: 'background 0.2s' }}>
                 {isEditMode ? t('save_changes', 'Enregistrer les modifications') : t('add_to_fleet', 'Ajouter au parc')}
               </button>
             </form>
           </div>
         </div>
       )}
-      {/* ================= DIALOGUE DE CONFIRMATION DE SUPPRESSION ================= */}
+
+      {/* DIALOGUE DE SUPPRESSION */}
       <Dialog 
         open={deleteDialog.open} 
         onClose={cancelDelete}
@@ -279,26 +303,16 @@ const MetersPage = () => {
         </DialogTitle>
         <DialogContent>
           <DialogContentText sx={{ color: '#334155', mt: 1 }}>
-            {t('meter_confirm_delete', { id: deleteDialog.meterId }, `Êtes-vous sûr de vouloir supprimer le compteur <strong style={{ color: '#0f172a' }}>${deleteDialog.meterId}</strong> ?`)}
+            Voulez-vous vraiment supprimer le compteur <strong>{deleteDialog.meterId}</strong> ?
             <br /><br />
-            {t('delete_warning', 'Cette action est irréversible et supprimera tout l\'historique associé à cette unité.')}
+            {t('delete_warning', 'Cette action est irréversible et supprimera tout l\'historique associé.')}
           </DialogContentText>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button 
-            onClick={cancelDelete} 
-            color="inherit" 
-            sx={{ textTransform: 'none', fontWeight: 600, color: '#64748b' }}
-          >
+          <Button onClick={cancelDelete} color="inherit" sx={{ textTransform: 'none', fontWeight: 600, color: '#64748b' }}>
             {t('cancel', 'Annuler')}
           </Button>
-          <Button 
-            onClick={confirmDelete} 
-            color="error" 
-            variant="contained" 
-            autoFocus
-            sx={{ textTransform: 'none', fontWeight: 600, boxShadow: 'none', borderRadius: '6px' }}
-          >
+          <Button onClick={confirmDelete} color="error" variant="contained" sx={{ textTransform: 'none', fontWeight: 600, boxShadow: 'none', borderRadius: '6px' }}>
             {t('delete_forever', 'Supprimer définitivement')}
           </Button>
         </DialogActions>

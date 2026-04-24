@@ -19,6 +19,7 @@ import UsersPage from './pages/UsersPage';
 import SettingsPage from './pages/SettingsPage';
 import websocketService from './services/websocket';
 import VerifyOTP from './pages/VerifyOtpPage'; // Import correct
+import HistoryPage from './pages/HistoryPage';
 
 const theme = createTheme({
   palette: {
@@ -68,6 +69,7 @@ function AppRoutes() {
               <Route path="/alerts" element={<AlertsPage />} />
               <Route path="/Live Capture" element={<LiveCapturePage />} />
               <Route path="/predictions" element={<PredictionsPage />} />
+              <Route path="/history" element={<HistoryPage />}/>
               <Route path="/reports" element={<ReportsPage />} />
               <Route path="/users" element={<UsersPage />} />
               <Route path="/settings" element={<SettingsPage />} />
