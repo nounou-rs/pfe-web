@@ -18,8 +18,9 @@ import ReportsPage from './pages/ReportsPage';
 import UsersPage from './pages/UsersPage';
 import SettingsPage from './pages/SettingsPage';
 import websocketService from './services/websocket';
-import VerifyOTP from './pages/VerifyOtpPage'; // Import correct
+import VerifyOTP from './pages/VerifyOtpPage';
 import HistoryPage from './pages/HistoryPage';
+import { MetersProvider } from './context/MetersContext';
 
 const theme = createTheme({
   palette: {
@@ -38,7 +39,7 @@ const PrivateRoute = ({ children }) => {
 
 function AppRoutes() {
   const { user } = useAuth();
-  
+
   useEffect(() => {
     if (user) {
       websocketService.connect();
@@ -48,12 +49,9 @@ function AppRoutes() {
 
   return (
     <Routes>
-      {/* ROUTES PUBLIQUES (Accessibles sans être connecté) */}
+      {/* ROUTES PUBLIQUES */}
       <Route path="/auth" element={!user ? <AuthenticationPage /> : <Navigate to="/dashboard" replace />} />
-      
-      {/* ⚠️ CRUCIAL : La page OTP doit être publique car l'utilisateur n'est pas encore loggé */}
       <Route path="/verify-otp" element={<VerifyOTP />} />
-      
       <Route path="/login" element={<Navigate to="/auth" replace />} />
 
       {/* ROUTES PRIVÉES */}
@@ -61,18 +59,18 @@ function AppRoutes() {
         <PrivateRoute>
           <Layout>
             <Routes>
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/map" element={<MapPage />} />
-              <Route path="/meters" element={<MetersPage />} />
-              <Route path="/meters/:id" element={<MeterDetailsPage />} />
-              <Route path="/alerts" element={<AlertsPage />} />
-              <Route path="/Live Capture" element={<LiveCapturePage />} />
-              <Route path="/predictions" element={<PredictionsPage />} />
-              <Route path="/history" element={<HistoryPage />}/>
-              <Route path="/reports" element={<ReportsPage />} />
-              <Route path="/users" element={<UsersPage />} />
-              <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/"              element={<Navigate to="/dashboard" replace />} />
+              <Route path="/dashboard"     element={<Dashboard />} />
+              <Route path="/map"           element={<MapPage />} />
+              <Route path="/meters"        element={<MetersPage />} />
+              <Route path="/meters/:id"    element={<MeterDetailsPage />} />
+              <Route path="/alerts"        element={<AlertsPage />} />
+              <Route path="/live-capture"  element={<LiveCapturePage />} /> {/* ← corrigé */}
+              <Route path="/predictions"   element={<PredictionsPage />} />
+              <Route path="/history"       element={<HistoryPage />} />
+              <Route path="/reports"       element={<ReportsPage />} />
+              <Route path="/users"         element={<UsersPage />} />
+              <Route path="/settings"      element={<SettingsPage />} />
             </Routes>
           </Layout>
         </PrivateRoute>
@@ -86,9 +84,11 @@ export default function App() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <AuthProvider>
-        <Router>
-          <AppRoutes />
-        </Router>
+        <MetersProvider>
+          <Router>
+            <AppRoutes />
+          </Router>
+        </MetersProvider>
       </AuthProvider>
     </ThemeProvider>
   );

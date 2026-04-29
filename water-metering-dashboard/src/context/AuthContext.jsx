@@ -48,6 +48,7 @@ export const AuthProvider = ({ children }) => {
         // On crée l'objet utilisateur à partir des clés renvoyées par ton FastAPI
         const userData = {
           nom: data.user_name,
+          id: data.user_id,
           role: data.role
         };
 

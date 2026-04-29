@@ -3,8 +3,9 @@ import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 import { Search, Plus, Edit, Trash2, X, Database, Hash, MapPin } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button } from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button, TablePagination } from '@mui/material';
 import { AlertTriangle } from 'lucide-react';
+import { useMeters } from '../context/MetersContext'; // Ajuste le chemin selon ton dossier
 
 const MetersPage = () => {
   const { t } = useTranslation();
@@ -15,6 +16,9 @@ const MetersPage = () => {
   const [filteredMeters, setFilteredMeters] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [chargement, setChargement] = useState(true);
+  const { refreshMeters } = useMeters();
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(5); // 5 lignes par page pour les compteurs c'est bien
 
   // États pour les Modaux
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -39,6 +43,7 @@ const MetersPage = () => {
       const response = await axios.get('http://127.0.0.1:8000/compteurs');
       setMeters(response.data);
       setFilteredMeters(response.data);
+      refreshMeters();
     } catch (error) {
       console.error("Erreur API :", error);
     } finally {
@@ -108,6 +113,7 @@ const MetersPage = () => {
       setIsModalOpen(false);
       resetForm();
       fetchMeters();
+      refreshMeters();
     } catch (error) {
       alert(error.response?.data?.detail || "Erreur serveur.");
     }
@@ -128,6 +134,7 @@ const MetersPage = () => {
       await axios.delete(`http://127.0.0.1:8000/compteurs/${deleteDialog.meterId}`);
       setDeleteDialog({ open: false, meterId: null, meterName: '' });
       fetchMeters();
+      refreshMeters();
     } catch (error) {
       console.error("Erreur lors de la suppression", error);
     }
@@ -187,7 +194,9 @@ const MetersPage = () => {
             </tr>
           </thead>
           <tbody>
-            {!chargement && filteredMeters.map((m) => (
+            {!chargement && filteredMeters
+              .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+              .map((m) => (
               <tr key={m.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
                 <td style={{ padding: '16px', fontWeight: 'bold', color: '#0284c7' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Hash size={14}/>{m.id}</div>
@@ -225,6 +234,27 @@ const MetersPage = () => {
             ))}
           </tbody>
         </table>
+        {/* --- CONTRÔLEUR DE PAGINATION --- */}
+        <TablePagination
+          rowsPerPageOptions={[5, 10, 25]}
+          component="div"
+          count={filteredMeters.length}
+          rowsPerPage={rowsPerPage}
+          page={page}
+          onPageChange={(event, newPage) => setPage(newPage)}
+          onRowsPerPageChange={(event) => {
+            setRowsPerPage(parseInt(event.target.value, 10));
+            setPage(0);
+          }}
+          labelRowsPerPage={t('rows_per_page', 'Lignes par page:')}
+          sx={{
+            borderTop: '1px solid #f1f5f9',
+            '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
+              color: '#64748b',
+              fontSize: '0.85rem'
+            }
+          }}
+        />
         {filteredMeters.length === 0 && !chargement && (
           <div style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8' }}>{t('no_meter_found', 'Aucun compteur trouvé.')}</div>
         )}
