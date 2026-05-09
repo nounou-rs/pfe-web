@@ -1,62 +1,78 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { useTranslation } from 'react-i18next';
 import {
-  Card, CardContent, Typography, List, ListItem,
-  ListItemText, Chip, Box, CircularProgress, Alert
+  Alert,
+  Box,
+  Card,
+  CardContent,
+  Chip,
+  CircularProgress,
+  List,
+  ListItem,
+  ListItemText,
+  Typography
 } from '@mui/material';
 
 const SEVERITE_COLOR = {
   critique: 'error',
-  modérée:  'warning',
-  faible:   'success',
+  moderee: 'warning',
+  faible: 'success',
 };
 
 export default function RecentAlerts() {
-  const [alertes, setAlertes]       = useState([]);
+  const { t } = useTranslation();
+  const [alertes, setAlertes] = useState([]);
   const [chargement, setChargement] = useState(true);
-  const [erreur, setErreur]         = useState(null);
+  const [erreur, setErreur] = useState(null);
 
   useEffect(() => {
     axios.get('http://127.0.0.1:8000/alertes-recentes')
-      .then(res => { setAlertes(res.data); setChargement(false); })
-      .catch(() => { setErreur('Impossible de charger les alertes.'); setChargement(false); });
-  }, []);
+      .then((res) => {
+        setAlertes(res.data);
+        setChargement(false);
+      })
+      .catch(() => {
+        setErreur(t('alerts_load_error', 'Impossible de charger les alertes.'));
+        setChargement(false);
+      });
+  }, [t]);
 
   return (
     <Card>
       <CardContent>
         <Typography variant="h6" fontWeight="bold" gutterBottom>
-          Alertes Récentes
+          {t('recent_alerts', 'Alertes recentes')}
         </Typography>
 
         {chargement && <CircularProgress size={24} />}
-        {erreur    && <Alert severity="error">{erreur}</Alert>}
+        {erreur && <Alert severity="error">{erreur}</Alert>}
 
         {!chargement && !erreur && alertes.length === 0 && (
           <Typography variant="body2" color="text.secondary">
-            Aucune alerte récente.
+            {t('no_recent_alerts', 'Aucune alerte recente.')}
           </Typography>
         )}
 
         <List>
-          {alertes.map(a => (
-            <ListItem key={a.id} sx={{ backgroundColor: '#f8fafc', borderRadius: 2, mb: 1 }}>
+          {alertes.map((alerte) => (
+            <ListItem key={alerte.id} sx={{ backgroundColor: '#f8fafc', borderRadius: 2, mb: 1 }}>
               <ListItemText
                 primary={
                   <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
                     <Typography variant="body2" fontWeight="bold">
-                      {a.type_anomalie}
+                      {t(alerte.type_anomalie, alerte.type_anomalie)}
                     </Typography>
                     <Chip
-                      label={a.severite}
+                      label={t(alerte.severite, alerte.severite)}
                       size="small"
-                      color={SEVERITE_COLOR[a.severite] || 'default'}
+                      color={SEVERITE_COLOR[alerte.severite] || 'default'}
                     />
                   </Box>
                 }
                 secondary={
                   <Typography variant="caption">
-                    {a.compteur_nom} ({a.compteur_id}) • {a.date}
+                    {alerte.compteur_nom} ({alerte.compteur_id}) - {alerte.date}
                   </Typography>
                 }
               />

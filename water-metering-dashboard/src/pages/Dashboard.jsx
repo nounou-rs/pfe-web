@@ -46,13 +46,13 @@ useEffect(() => {
         {t('dashboard')}
       </Typography>
 
-      {/* ── 5 KPI cards sur une seule ligne ── */}
+      {/* 5 KPI cards */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid item xs={12} sm={6} md={2.4}>
           <KPICard
             title={t('total_meters')}
             value={stats.total_meters}
-            subtitle={`${stats.offline_meters} hors ligne`}
+            subtitle={`${stats.offline_meters} ${t('offline_meters')}`}
             icon={<WaterDrop />}
             color="#8ED8F8"
           />
@@ -62,7 +62,7 @@ useEffect(() => {
           <KPICard
             title={t('consumption')}
             value={stats.total_consumption}
-            subtitle={`${stats.active_leaks} fuite(s) active(s)`}
+            subtitle={`${stats.active_leaks} ${t('active_leaks')}`}
             icon={<TrendingUp />}
             color="#8CC63F"
           />
@@ -71,8 +71,8 @@ useEffect(() => {
         <Grid item xs={12} sm={6} md={2.4}>
           <KPICard
             title={t('alerts')}
-            value={alertesCount}             // ← vrai count depuis /alertes/count
-            subtitle={`${stats.tickets_critiques} critique(s)`}
+            value={alertesCount}
+            subtitle={`${stats.tickets_critiques} ${t('critical_count')}`}
             icon={<Warning />}
             color="#ef4444"
           />
@@ -80,9 +80,9 @@ useEffect(() => {
 
         <Grid item xs={12} sm={6} md={2.4}>
           <KPICard
-            title="Compteurs hors ligne"
+            title={t('offline_meters')}
             value={stats.offline_meters}
-            subtitle="Depuis dernière synchro"
+            subtitle={t('since_last_sync')}
             icon={<WifiOff />}
             color="#f97316"
           />
@@ -90,16 +90,16 @@ useEffect(() => {
 
         <Grid item xs={12} sm={6} md={2.4}>
           <KPICard
-            title="Tickets en cours"
+            title={t('open_tickets')}
             value={stats.tickets_ouverts}
-            subtitle={`${stats.tickets_critiques} priorité critique`}
+            subtitle={`${stats.tickets_critiques} ${t('critical_priority')}`}
             icon={<Build />}
             color="#a855f7"
           />
         </Grid>
       </Grid>
 
-      {/* ── Graphique + Alertes ── */}
+      {/* Graphique + Alertes */}
       <Grid container spacing={3}>
         <Grid item xs={12} lg={8}>
           <ConsumptionChart />

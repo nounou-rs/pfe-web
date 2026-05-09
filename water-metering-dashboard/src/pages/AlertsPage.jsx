@@ -5,7 +5,7 @@ import {
   Box, Typography, Paper, IconButton, Chip, CircularProgress, Alert,
   Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button
 } from '@mui/material';
-import { AlertCircle, MapPin, Eye, Trash2, AlertTriangle } from 'lucide-react';
+import { AlertCircle, Trash2, AlertTriangle } from 'lucide-react';
 
 export default function AlertsPage() {
   const { t } = useTranslation();
@@ -159,12 +159,6 @@ export default function AlertsPage() {
 
                 {/* Section d'actions droite */}
                 <Box sx={{ display: 'flex', gap: 1 }}>
-                  <IconButton sx={{ bgcolor: '#f1f5f9', color: '#475569', borderRadius: '10px', '&:hover': { bgcolor: '#e2e8f0' } }}>
-                    <MapPin size={20} />
-                  </IconButton>
-                  <IconButton sx={{ bgcolor: '#0284c7', color: 'white', borderRadius: '10px', '&:hover': { bgcolor: '#0369a1' } }}>
-                    <Eye size={20} />
-                  </IconButton>
                   {/* Appel de la nouvelle fonction ici */}
                   <IconButton 
                     onClick={() => requestDeleteAlerte(alerte.id)}
