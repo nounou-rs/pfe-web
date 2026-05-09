@@ -14,7 +14,7 @@ const menuItems = [
   { key: 'alerts',       text: 'alerts',          icon: AlertCircle,     path: '/alerts' },
   { key: 'live_capture', text: 'live_capture',    icon: Camera,          path: '/live-capture' }, // ← espace retiré
   { key: 'predictions',  text: 'predictions',     icon: Brain,           path: '/predictions' },
-  { key: 'History',      text: 'history',         icon: Clock,           path: '/history' },
+  { key: 'History',      text: 'Historique',         icon: Clock,           path: '/history' },
   { key: 'reports',      text: 'reports_title',   icon: FileText,        path: '/reports' },
   { key: 'settings',     text: 'settings_title',  icon: Settings,        path: '/settings' },
 ];
