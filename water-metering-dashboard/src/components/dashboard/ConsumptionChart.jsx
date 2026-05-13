@@ -7,8 +7,10 @@ import {
   Card,
   CardContent,
   CircularProgress,
-  ToggleButton,
-  ToggleButtonGroup,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
   Typography
 } from '@mui/material';
 import {
@@ -23,25 +25,26 @@ import {
 
 const API = 'http://127.0.0.1:8000';
 
+// Valeurs envoyées au backend (correspondent exactement à ce qu'attend /consommation/historique)
 const PERIODS = [
-  { value: 'today', labelKey: 'consumption_today' },
-  { value: 'week', labelKey: 'consumption_week' },
-  { value: 'month', labelKey: 'consumption_month' },
-  { value: 'year', labelKey: 'consumption_year' },
+  { value: "aujourd'hui", labelKey: 'consumption_today',  label: "Aujourd'hui" },
+  { value: 'cette semaine', labelKey: 'consumption_week',  label: 'Cette semaine' },
+  { value: 'mois',          labelKey: 'consumption_month', label: 'Ce mois' },
+  { value: 'annee',         labelKey: 'consumption_year',  label: 'Cette année' },
 ];
 
 const normalizeConsumptionRow = (row) => ({
-  time: row.heure ?? row.time ?? row.label ?? row.date ?? row.mois ?? row.month ?? row.annee ?? row.year,
+  time:        row.heure ?? row.time ?? row.label ?? row.date ?? row.mois ?? row.month ?? row.annee ?? row.year,
   consumption: row.consommation ?? row.consumption ?? row.total ?? row.index ?? row.debit ?? 0,
-  label: row.date_complete ?? row.label ?? row.date ?? row.time,
+  label:       row.date_complete ?? row.label ?? row.date ?? row.time,
 });
 
 export default function ConsumptionChart() {
   const { t } = useTranslation();
-  const [donnees, setDonnees] = useState([]);
-  const [periode, setPeriode] = useState('today');
+  const [donnees,    setDonnees]    = useState([]);
+  const [periode,    setPeriode]    = useState("aujourd'hui");
   const [chargement, setChargement] = useState(true);
-  const [erreur, setErreur] = useState(null);
+  const [erreur,     setErreur]     = useState(null);
 
   useEffect(() => {
     let ignore = false;
@@ -51,39 +54,35 @@ export default function ConsumptionChart() {
       setErreur(null);
 
       try {
-        let response;
-        try {
-          response = await axios.get(`${API}/dashboard/consumption`, { params: { period: periode } });
-        } catch {
-          response = await axios.get(`${API}/consommation/historique`, { params: { period: periode } });
-        }
+        // Endpoint unique et correct, avec la valeur de période attendue par le backend
+        const response = await axios.get(`${API}/consommation/historique`, {
+          params: { periode: periode },   // ✅ "periode" correspond au paramètre FastAPI
+        });
 
-        const rows = Array.isArray(response.data) ? response.data : (response.data?.data ?? []);
+        const rows = Array.isArray(response.data)
+          ? response.data
+          : (response.data?.data ?? []);
+
         if (!ignore) {
           setDonnees(rows.map(normalizeConsumptionRow));
         }
       } catch {
         if (!ignore) {
-          setErreur(t('consumption_history_error', "Impossible de charger l'historique de consommation."));
+          setErreur(
+            t('consumption_history_error', "Impossible de charger l'historique de consommation.")
+          );
         }
       } finally {
-        if (!ignore) {
-          setChargement(false);
-        }
+        if (!ignore) setChargement(false);
       }
     };
 
     fetchConsumption();
-
-    return () => {
-      ignore = true;
-    };
+    return () => { ignore = true; };
   }, [periode, t]);
 
-  const handlePeriodChange = (_, nextPeriod) => {
-    if (nextPeriod) {
-      setPeriode(nextPeriod);
-    }
+  const handlePeriodChange = (event) => {
+    setPeriode(event.target.value);
   };
 
   return (
@@ -103,38 +102,32 @@ export default function ConsumptionChart() {
             {t('consumption_history', 'Historique de consommation')}
           </Typography>
 
-          <ToggleButtonGroup
-            exclusive
-            size="small"
-            value={periode}
-            onChange={handlePeriodChange}
-            aria-label={t('consumption_period', 'Periode de consommation')}
-            sx={{
-              flexWrap: 'wrap',
-              gap: 0.5,
-              '& .MuiToggleButtonGroup-grouped': {
-                border: '1px solid #cbd5e1',
-                borderRadius: '8px !important',
-                px: 1.5,
-                textTransform: 'none',
-                fontWeight: 600,
-              },
-            }}
-          >
-            {PERIODS.map((option) => (
-              <ToggleButton key={option.value} value={option.value}>
-                {t(option.labelKey)}
-              </ToggleButton>
-            ))}
-          </ToggleButtonGroup>
+          {/* Liste déroulante à la place des ToggleButtons */}
+          <FormControl size="small" sx={{ minWidth: 180 }}>
+            <InputLabel id="period-select-label">
+              {t('consumption_period', 'Période')}
+            </InputLabel>
+            <Select
+              labelId="period-select-label"
+              value={periode}
+              label={t('consumption_period', 'Période')}
+              onChange={handlePeriodChange}
+            >
+              {PERIODS.map((option) => (
+                <MenuItem key={option.value} value={option.value}>
+                  {t(option.labelKey, option.label)}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
         </Box>
 
         {chargement && <CircularProgress size={24} />}
-        {erreur && <Alert severity="error">{erreur}</Alert>}
+        {erreur     && <Alert severity="error">{erreur}</Alert>}
 
         {!chargement && !erreur && donnees.length === 0 && (
           <Alert severity="info">
-            {t('no_consumption_data', 'Aucune donnee de consommation disponible pour cette periode.')}
+            {t('no_consumption_data', 'Aucune donnée de consommation disponible pour cette période.')}
           </Alert>
         )}
 
@@ -143,7 +136,7 @@ export default function ConsumptionChart() {
             <AreaChart data={donnees} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#0078B8" stopOpacity={0.8} />
+                  <stop offset="5%"  stopColor="#0078B8" stopOpacity={0.8} />
                   <stop offset="95%" stopColor="#8ED8F8" stopOpacity={0.1} />
                 </linearGradient>
               </defs>
@@ -152,7 +145,7 @@ export default function ConsumptionChart() {
               <YAxis stroke="#64748B" />
               <Tooltip
                 contentStyle={{ backgroundColor: '#fff', border: '1px solid #E2E8F0', borderRadius: 8 }}
-                formatter={(value) => [`${value} m3`, t('index', 'Index')]}
+                formatter={(value) => [`${value} m³`, t('index', 'Index')]}
                 labelFormatter={(label, payload) => payload?.[0]?.payload?.label || label}
               />
               <Area
